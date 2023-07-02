@@ -2,14 +2,21 @@
 
 const isDebug = true;
 function Logger(text) {
-    const style = "color:#93eb4c";
+    const style = "color:#93eb4c; background-color: #333333; padding: 0px 10px; display: block;";
     if (isDebug)
         console.log(`%c${text}`, style);
 }
 
 // ================================================================================================
-// Text Alive
+// #region Text Alive
 const { Player } = TextAliveApp;
+
+// 単語が発声されたら #text に表示する
+const animateWord = function (now, unit) {
+    if (unit.contains(now)) {
+        document.querySelector("#text").textContent = unit.text;
+    }
+};
 
 // TextAlive Player の生成
 const player = new Player({
@@ -23,8 +30,40 @@ player.addListener({
     onVideoReady,
     onAppReady,
     onPlay,
+    onPause,
     onTimeUpdate,
 });
+
+// Container
+const textContainer = document.querySelector("#text");
+
+// Contol Buttons
+const playBtns = document.querySelectorAll(".play");
+const jumpBtn = document.querySelector("#jump");
+const pauseBtn = document.querySelector("#pause");
+const rewindBtn = document.querySelector("#rewind");
+const positionEl = document.querySelector("#position strong");
+
+// Meta Info
+const artistSpan = document.querySelector("#artist span");
+const songSpan = document.querySelector("#song span");
+
+// プレイヤーの情報の構造体
+let playerProgress = {
+    position: null,
+    beat: null,
+    chorus: null,
+    chord: null,
+    phrase: null,
+    word: null,
+    char: null,
+    volume: null,
+    isPlaying: false,
+    ready: false
+};
+
+let c = null;
+let lyrics = [];
 
 // -----------------------------------------------------------------------
 //#region Evect Listener
@@ -34,11 +73,11 @@ player.addListener({
  */
 function onVideoReady(v) {
     // 各単語の animate 関数をセット
-    // let word = player.video.firstPhrase;
-    // while (word) {
-    //     word.animate = animateWord;
-    //     word = word.next;
-    // }
+    let word = player.video.firstPhrase;
+    while (word) {
+        word.animate = animateWord;
+        word = word.next;
+    }
 
     // アーティスト名・楽曲名を表示
     artistSpan.textContent = player.data.song.artist.name;
@@ -89,18 +128,23 @@ function onAppReady(app) {
         "click",
         () => player.video && player.requestMediaSeek(0)
     );
-
 }
 
 /* 楽曲の再生が始まったら呼ばれる */
 function onPlay() {
-    // const a = document.querySelector("#control > a#play");
-    // while (a.firstChild) a.removeChild(a.firstChild);
-    // a.appendChild(document.createTextNode("\uf28b"));
+    playerProgress.isPlaying = true;
+    Logger("Playing");
+}
+
+function onPause() {
+    playerProgress.isPlaying = false;
+    Logger("Pause");
 }
 
 // 再生位置の情報が更新されたら呼ばれる
 function onTimeUpdate(position) {
+    // 構造体の更新
+    playerProgress.position = position;
     // 歌詞情報があるか
     if (!player.video.firstChar)
         return;
@@ -110,7 +154,7 @@ function onTimeUpdate(position) {
 
     // 文字を取得し 画面に表示する
     let currentPhrase = c || player.video.firstPhrase;
-    while (currentPhrase && currentPhrase.startTime < position + 500)
+    while (currentPhrase && currentPhrase.startTime < position + 5000)
     {
         // 新しい文字の場合は更新
         if (c !== currentPhrase)
@@ -126,63 +170,31 @@ function onTimeUpdate(position) {
             // メッシュを作成
             const mesh = ConvertTextToMesh(currentPhrase.text);
             Logger("Lyrics push");
-            lyrics.push(mesh);
+            lyrics.push({
+                obj: currentPhrase,
+                mesh: mesh
+            });
         }
-
-        // let word = currentPhrase.firstWord;
-        // let textMeshes = [];
-        // while (word && word.startTime < currentPhrase.endTime)
-        // {
-        //     // Canvas を使用して歌詞をメッシュも貼り付ける
-        //     const canvas = document.createElement('canvas');
-        //     canvas.width = word.text.length * (512 + 32);
-        //     canvas.height = 512 + 32;
-        //     const context = canvas.getContext('2d');
-
-        //     // フォントの変更
-        //     context.font = "420px sans";
-        //     context.fillStyle = "#393939";
-        //     context.fillText(word.text, 0, 512);
-
-        //     textMeshes.push({
-        //         obj: word,
-        //         mesh: new THREE.Mesh(new THREE.PlaneGeometry(word.text.length, 1), new THREE.MeshBasicMaterial({map: new THREE.CanvasTexture(canvas), transparent: true})),
-        //     });
-
-        //     word = word.next;
-        // }
-        // lyrics.push(textMeshes);
 
         currentPhrase = currentPhrase.next;
     }
 
     // 歌詞メッシュをシーンに追加
     lyrics.forEach((value, index) => {
-        Logger("Add mesh to scene");
-        value.position.x = index % 3 - 1;
-        value.position.y = -index;
-        value.position.z = index % 3 - 1;
-        value.visible = true;
-        _scene.add(value);
+        // Logger("Add mesh to scene");
+        value.mesh.position.x = index % 3 - 1;
+        value.mesh.position.y = -index;
+        value.mesh.position.z = index % 3 - 1;
+        // value.mesh.visible = true;
+        _scene.add(value.mesh);
     });
-
-
-    // lyrics.forEach ((line, index) => {
-    //     line.forEach ((word, idx) => {
-    //         // y, z は固定。x 軸のみをレンダーで計算する
-    //         word.mesh.position.x = index % 3 - 1;
-    //         word.mesh.position.y = index % 3 - 1;
-    //         word.mesh.position.z = index % 3 - 1;
-    //         word.mesh.visible = true;
-    //         _scene.add(word.mesh);
-    //     })
-    // })
 }
 //#endregion
 // -----------------------------------------------------------------------
+// #endregion
 // ================================================================================================
-// three.js
-const _canvas = document.querySelector("#myCanvas");
+// #region three.js
+const _canvas = document.querySelector("#renderCanvas");
 window.addEventListener("DOMContentLoaded", init);
 
 const windowWidth = window.innerWidth;
@@ -198,25 +210,26 @@ function init()
     });
     // レンダラーのサイズを変更
     _renderer.setSize(windowWidth, windowHeight);
-    _renderer.setClearColor(0xffffff, 1);
+    // _renderer.setClearColor(0xffffff, 1);
+    _renderer.setClearColor(0x000000, 1);
 
     // シーンの作成
     _scene = new THREE.Scene();
     // カメラの作成
     _camera = new THREE.PerspectiveCamera(70, windowWidth / windowHeight, 0.1, 1000);
-    _camera.position.set(-1.2, 0, 5);
+    _camera.position.set(-15, 15, 15);
     // 常にカメラの向きを原点に
     _camera.lookAt(_scene.position);
 
     // 立方体の作成
-    // const geometry = new THREE.BoxGeometry(500, 500, 500);
-    // const material = new THREE.MeshStandardMaterial({
-    //     color: 0x0000ff
-    // });
+    const geometry = new THREE.BoxGeometry(1, 1, 1);
+    const material = new THREE.MeshStandardMaterial({
+        color: 0x0000ff
+    });
     // メッシュを作成
-    // const box = new THREE.Mesh(geometry, material);
+    const box = new THREE.Mesh(geometry, material);
     // シーンに追加
-    // _scene.add(box);
+    _scene.add(box);
 
     // ライトの作成
     const light = new THREE.DirectionalLight(0xffffff);
@@ -228,29 +241,34 @@ function init()
     const ambientLight = new THREE.AmbientLight(0x404040);
     _scene.add(ambientLight);
 
+    // グリッドの作成
+    if (isDebug)
+        CreateHelper();
+
     render();
 }
 
 // シーンのレンダリング
 function render()
 {
-    // 歌詞をオブジェクトを表示し 位置を更新する
-    // const progress = Date.now();
-    // if (player.isPlaying)
-    // {
-    //     lyrics.forEach (line => {
-    //         line.forEach ((word, idx) => {
-    //             if (word.obj.startTime < progress && word.obj.endTime < progress + 20000)
-    //             {
-    //                 // console.log("aaaaaaaaaaa");
-    //                 word.mesh.visible = true;
-    //                 // 最初のワードにのみ時間に従って配置する
-    //                 // 残りのワードは前のメッシュに従う
-    //                 word.mesh.position.x = (idx === 0 ? ((word.obj.startTime - (progress || 0)) * 1 + 10) : line[idx - 1] && (line[idx - 1].mesh.position.x + (line[idx - 1].obj.text.length / 2)) || Number.NEGATIVE_INFINITY) + (word.obj.text.length / 2);
-    //             }
-    //         })
-    //     })
-    // }
+    if (playerProgress.isPlaying)
+    {
+        // 歌詞オブジェクトの位置を更新
+        lyrics.forEach ((line, index) => {
+            if (line.obj.startTime < playerProgress.position + 5000 && line.obj.endTime < (playerProgress.position + 200000))
+            {
+                line.mesh.visible = true;
+                // line.mesh.position.x = (line.obj.startTime - (playerProgress.position || 0) * 0.5 + 10) / 100;
+                line.mesh.position.x = (line.obj.startTime - (playerProgress.position || 0)) / 500;
+                Logger(line.mesh.position.x);
+                // Logger(line.obj.startTime);
+            }
+            else
+            {
+                line.mesh.visible = false;
+            }
+        });
+    }
 
     // 描画
     _renderer.render(_scene, _camera);
@@ -274,7 +292,8 @@ function ConvertTextToMesh(text)
 
         const context = canvas.getContext('2d');
         context.font = "420px sans";
-        context.fillStyle = "#393939";
+        // context.fillStyle = "#393939";
+        context.fillStyle = "#EEEEEE";
         context.fillText(text, 0, 512);
 
         const planeGeometry = new THREE.PlaneGeometry(text.length, 1);
@@ -288,3 +307,17 @@ function ConvertTextToMesh(text)
         console.error(error);
     }
 }
+// -----------------------------------------------------------------------
+// 確認用グリッドと座標軸を作成
+function CreateHelper(){
+    //座標軸の生成
+    const axes = new THREE.AxesHelper(1000);
+    axes.position.set(0,0,0);
+    _scene.add(axes);
+
+    //グリッドの生成
+    const grid = new THREE.GridHelper(100,100);
+    _scene.add(grid);
+}
+//#endregion
+// ================================================================================================

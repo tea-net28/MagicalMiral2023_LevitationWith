@@ -1,21 +1,43 @@
 <!DOCTYPE html>
 <html lang="ja">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>LevitationWith...</title>
 
-        <link rel="stylesheet" href="style.css" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LevitationWith...</title>
 
-
-    </head>
-    <body>
-        <canvas id="renderCanvas"></canvas>
-
-        <!-- Text Alive 情報を表示 -->
-        <div id="media"></div>
+    <link rel="stylesheet" href="style.css" />
 
 
+</head>
+
+<body>
+    <span id="text">ここに歌詞が表示されます</span>
+    <div id="header">
+        <div id="meta">
+            <div id="artist"><strong>artist:</strong> <span>-</span></div>
+            <div id="song"><strong>song:</strong> <span>-</span></div>
+        </div>
+    </div>
+
+
+    <div id="footer">
+        <p>
+            <span id="position"><strong>-</strong> [ms]</span>
+        </p>
+        <div id="control">
+            <button class="play">再生</button>
+            <button id="jump">歌詞頭出し</button>
+            <button id="pause">一時停止</button>
+            <button id="rewind">巻き戻し</button>
+        </div>
+    </div>
+
+    <!-- Text Alive 情報を表示 -->
+    <div id="media"></div>
+
+
+    <canvas id="renderCanvas"></canvas>
 
 
 
@@ -25,12 +47,15 @@
 
 
 
-        <!-- TextAlive -->
-        <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-        <script src="https://unpkg.com/textalive-app-api/dist/index.js"></script>
-        <!-- three.js -->
-        <script src="assets/three.js"></script>
 
-        <script src="app.js"></script>
-    </body>
+
+    <!-- TextAlive -->
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/textalive-app-api/dist/index.js"></script>
+    <!-- three.js -->
+    <script src="assets/three.js"></script>
+
+    <script src="app.js"></script>
+</body>
+
 </html>
