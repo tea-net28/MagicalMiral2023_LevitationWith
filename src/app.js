@@ -1,5 +1,10 @@
 'use strict';
 
+import { Player } from "textalive-app-api";
+import * as THREE from "three";
+import "./style.css";
+import "./Assets/blue_whale.glb"
+
 const isDebug = true;
 function Logger(text) {
     const style = "color:#93eb4c; background-color: #333333; padding: 0px 10px; display: block;";
@@ -9,7 +14,7 @@ function Logger(text) {
 
 // ================================================================================================
 // #region Text Alive
-const { Player } = TextAliveApp;
+// const { Player } = TextAliveApp;
 
 // 単語が発声されたら #text に表示する
 const animateWord = function (now, unit) {
