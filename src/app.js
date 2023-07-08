@@ -8,9 +8,10 @@ import * as THREE from "three";
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { Water } from 'three/examples/jsm/objects/Water.js';
 import { Sky } from 'three/examples/jsm/objects/Sky.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 import "./style.css";
-import "./Assets/blue_whale.glb";
+import whaleModel from "./Assets/blue_whale.glb";
 // import waterTexture from "./Assets/Water_1_M_Normal.jpg";
 import waterTexture from "./Assets/waternormals.jpg";
 
@@ -20,6 +21,11 @@ import waterTexture from "./Assets/waternormals.jpg";
 const isDebug = true;
 function Logger(text) {
     const style = "color:#93eb4c; background-color: #333333; padding: 0px 10px; display: block;";
+    if (isDebug)
+        console.log(`%c${text}`, style);
+}
+function LoggerError(text) {
+    const style = "color:#d85b51; background-color: #333333; padding: 0px 10px; display: block;";
     if (isDebug)
         console.log(`%c${text}`, style);
 }
@@ -219,6 +225,7 @@ let _renderer, _scene, _camera;
 let orbitControls;
 let water;
 let _sky;
+let _modelLoader;
 
 function init() {
     // レンダラーの作成
@@ -272,9 +279,12 @@ function init() {
     // 空の生成
     CreateSky();
 
+    // 3D モデルを読み込む
+    LoadGLTF(whaleModel);
+
     // グリッドの作成
-    // if (isDebug)
-    // CreateHelper();
+    if (isDebug)
+        CreateHelper();
 
     render();
 }
@@ -390,7 +400,6 @@ function CreateSky() {
     sun_uniforms['rayleigh'].value = 2;
     sun_uniforms['mieCoefficient'].value = 0.005;
     sun_uniforms['mieDirectionalG'].value = 0.8;
-    // sun_uniforms['luminance'].value = 1;
 
     const theta = Math.PI * (-0.01);
     const phi = 2 * Math.PI * (-0.25);
@@ -401,17 +410,49 @@ function CreateSky() {
     sunSphere.visible = true;
     sun_uniforms['sunPosition'].value.copy(sunSphere.position);
 }
+// -----------------------------------------------------------------------
+// GLTFLoader.js を用いて glTF データを読み込む
+function LoadGLTF(modelPath) {
+    _modelLoader = new GLTFLoader();
 
+    // glTF リソースを読み込む
+    _modelLoader.load(
+        // resource URL
+        whaleModel,
+        // called when the resource is loaded
+        function (gltf) {
+
+            _scene.add(gltf.scene);
+
+            gltf.animations; // Array<THREE.AnimationClip>
+            gltf.scene; // THREE.Group
+            gltf.scenes; // Array<THREE.Group>
+            gltf.cameras; // Array<THREE.Camera>
+            gltf.asset; // Object
+
+            Logger("glTF モデルを読み込みました");
+        },
+        // called while loading is progressing
+        function (xhr) {
+            Logger((xhr.loaded / xhr.total * 100) + '% loaded');
+        },
+        // called when loading has errors
+        function (error) {
+            LoggerError('An error happened');
+            LoggerError(error);
+        }
+    );
+}
 // -----------------------------------------------------------------------
 // 確認用グリッドと座標軸を作成
 function CreateHelper() {
     //座標軸の生成
-    const axes = new THREE.AxesHelper(1000);
+    const axes = new THREE.AxesHelper(10000);
     axes.position.set(0, 0, 0);
     _scene.add(axes);
 
     //グリッドの生成
-    const grid = new THREE.GridHelper(100, 100);
+    const grid = new THREE.GridHelper(1000, 1000);
     _scene.add(grid);
 }
 //#endregion
