@@ -31,6 +31,11 @@ module.exports = {
                 use: [MiniCssExtractPlugin.loader, 'css-loader'],
             },
             {
+                // 画像やフォントファイル
+                test: /\.(jpg|ico|png|svg|ttf|otf|eot|woff?2?)$/,
+                type: "asset/resource",
+            },
+            {
                 // 3D モデル
                 test: /\.glb$/,
                 type: "asset/resource"

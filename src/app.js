@@ -1,10 +1,20 @@
 'use strict';
 
+// ================================================================================================
+// Import library
+// ================================================================================================
 import { Player } from "textalive-app-api";
 import * as THREE from "three";
-import "./style.css";
-import "./Assets/blue_whale.glb"
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { Water } from 'three/examples/jsm/objects/Water.js';
 
+import "./style.css";
+import "./Assets/blue_whale.glb";
+import waterTexture from "./Assets/Water_1_M_Normal.jpg";
+
+// ================================================================================================
+// for Debug
+// ================================================================================================
 const isDebug = true;
 function Logger(text) {
     const style = "color:#93eb4c; background-color: #333333; padding: 0px 10px; display: block;";
@@ -206,6 +216,8 @@ const windowWidth = window.innerWidth;
 const windowHeight = window.innerHeight;
 
 let _renderer, _scene, _camera;
+let water;
+let orbitControls;
 
 function init()
 {
@@ -223,16 +235,21 @@ function init()
     // カメラの作成
     _camera = new THREE.PerspectiveCamera(70, windowWidth / windowHeight, 0.1, 1000);
     _camera.position.set(-15, 15, 15);
+    _scene.add(_camera);
     // 常にカメラの向きを原点に
-    _camera.lookAt(_scene.position);
+    // _camera.lookAt(_scene.position);
+    //OrbitControls
+    document.addEventListener('touchmove',function(e){e.preventDefault();},{passive: false});
+    orbitControls = new OrbitControls(_camera, _canvas);
 
     // 立方体の作成
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
+    const geometry = new THREE.BoxGeometry(2, 2, 2);
     const material = new THREE.MeshStandardMaterial({
         color: 0x0000ff
     });
     // メッシュを作成
     const box = new THREE.Mesh(geometry, material);
+    box.position.set(0, 5, 0);
     // シーンに追加
     _scene.add(box);
 
@@ -246,9 +263,12 @@ function init()
     const ambientLight = new THREE.AmbientLight(0x404040);
     _scene.add(ambientLight);
 
+    // 海の生成
+    CreateWaterGeometry();
+
     // グリッドの作成
-    if (isDebug)
-        CreateHelper();
+    // if (isDebug)
+        // CreateHelper();
 
     render();
 }
@@ -270,10 +290,19 @@ function render()
             }
             else
             {
-                line.mesh.visible = false;
+                line.mesh.visible = false;示されます
             }
         });
     }
+
+    // water
+    if (water !== undefined && water !== null)
+    {
+        water.material.uniforms['time'].value += 1.0 / 60.0;
+    }
+
+    // Camera Control
+    orbitControls.update();
 
     // 描画
     _renderer.render(_scene, _camera);
@@ -312,6 +341,31 @@ function ConvertTextToMesh(text)
         console.error(error);
     }
 }
+// -----------------------------------------------------------------------
+// Water.js を用いて 海を生成
+function CreateWaterGeometry()
+{
+    const waterGeometry = new THREE.PlaneGeometry(1000, 1000);
+
+    water = new Water(
+        waterGeometry,
+        {
+            textureWidth: 512,
+            textureHeight: 512,
+            waterNormal: new THREE.TextureLoader().load(waterTexture, function(texture){ texture.wrapS = texture.wrapT = THREE.RepeatWrapping; }),
+            alpha: 0.5,
+            waterColor: 0x3e89ce,
+            distortionScale: 3.7,
+            fog:_scene.fog !== undefined
+        }
+    );
+
+    // シーンに追加
+    _scene.add(water);
+    water.rotation.x = - Math.PI / 2;
+}
+
+
 // -----------------------------------------------------------------------
 // 確認用グリッドと座標軸を作成
 function CreateHelper(){
