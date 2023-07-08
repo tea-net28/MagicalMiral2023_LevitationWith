@@ -7,6 +7,7 @@ import { Player } from "textalive-app-api";
 import * as THREE from "three";
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { Water } from 'three/examples/jsm/objects/Water.js';
+import { Sky } from 'three/examples/jsm/objects/Sky.js';
 
 import "./style.css";
 import "./Assets/blue_whale.glb";
@@ -169,11 +170,9 @@ function onTimeUpdate(position) {
 
     // 文字を取得し 画面に表示する
     let currentPhrase = c || player.video.firstPhrase;
-    while (currentPhrase && currentPhrase.startTime < position + 5000)
-    {
+    while (currentPhrase && currentPhrase.startTime < position + 5000) {
         // 新しい文字の場合は更新
-        if (c !== currentPhrase)
-        {
+        if (c !== currentPhrase) {
             // div 要素を作成し その中にテキストを入れる
             const div = document.createElement("div");
             div.appendChild(document.createTextNode(currentPhrase.text));
@@ -216,11 +215,11 @@ const windowWidth = window.innerWidth;
 const windowHeight = window.innerHeight;
 
 let _renderer, _scene, _camera;
-let water;
 let orbitControls;
+let water;
+let _sky;
 
-function init()
-{
+function init() {
     // レンダラーの作成
     _renderer = new THREE.WebGLRenderer({
         canvas: _canvas
@@ -239,7 +238,7 @@ function init()
     // 常にカメラの向きを原点に
     // _camera.lookAt(_scene.position);
     //OrbitControls
-    document.addEventListener('touchmove',function(e){e.preventDefault();},{passive: false});
+    document.addEventListener('touchmove', function (e) { e.preventDefault(); }, { passive: false });
     orbitControls = new OrbitControls(_camera, _canvas);
 
     // 立方体の作成
@@ -266,38 +265,36 @@ function init()
     // 海の生成
     CreateWaterGeometry();
 
+    // 空の生成
+    CreateSky();
+
     // グリッドの作成
     // if (isDebug)
-        // CreateHelper();
+    // CreateHelper();
 
     render();
 }
 
 // シーンのレンダリング
-function render()
-{
-    if (playerProgress.isPlaying)
-    {
+function render() {
+    if (playerProgress.isPlaying) {
         // 歌詞オブジェクトの位置を更新
-        lyrics.forEach ((line, index) => {
-            if (line.obj.startTime < playerProgress.position + 5000 && line.obj.endTime < (playerProgress.position + 200000))
-            {
+        lyrics.forEach((line, index) => {
+            if (line.obj.startTime < playerProgress.position + 5000 && line.obj.endTime < (playerProgress.position + 200000)) {
                 line.mesh.visible = true;
                 // line.mesh.position.x = (line.obj.startTime - (playerProgress.position || 0) * 0.5 + 10) / 100;
                 line.mesh.position.x = (line.obj.startTime - (playerProgress.position || 0)) / 500;
                 Logger(line.mesh.position.x);
                 // Logger(line.obj.startTime);
             }
-            else
-            {
-                line.mesh.visible = false;示されます
+            else {
+                line.mesh.visible = false; 示されます
             }
         });
     }
 
     // water
-    if (water !== undefined && water !== null)
-    {
+    if (water !== undefined && water !== null) {
         water.material.uniforms['time'].value += 1.0 / 60.0;
     }
 
@@ -315,10 +312,8 @@ function render()
  * @param {string} メッシュに変換したい文字列
  * @returns {THREE.Mesh} THREE.Mesh 形式のテキスト
  */
-function ConvertTextToMesh(text)
-{
-    try
-    {
+function ConvertTextToMesh(text) {
+    try {
         Logger("Convert text to mesh");
         const canvas = document.createElement('canvas');
         canvas.width = text.length * (512 + 32);
@@ -331,20 +326,18 @@ function ConvertTextToMesh(text)
         context.fillText(text, 0, 512);
 
         const planeGeometry = new THREE.PlaneGeometry(text.length, 1);
-        const meshBasicMaterial = new THREE.MeshBasicMaterial({map: new THREE.CanvasTexture(canvas), transparent: true});
+        const meshBasicMaterial = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true });
         const mesh = new THREE.Mesh(planeGeometry, meshBasicMaterial);
 
         return mesh;
     }
-    catch (error)
-    {
+    catch (error) {
         console.error(error);
     }
 }
 // -----------------------------------------------------------------------
 // Water.js を用いて 海を生成
-function CreateWaterGeometry()
-{
+function CreateWaterGeometry() {
     const waterGeometry = new THREE.PlaneGeometry(1000, 1000);
 
     water = new Water(
@@ -352,11 +345,11 @@ function CreateWaterGeometry()
         {
             textureWidth: 512,
             textureHeight: 512,
-            waterNormal: new THREE.TextureLoader().load(waterTexture, function(texture){ texture.wrapS = texture.wrapT = THREE.RepeatWrapping; }),
+            waterNormal: new THREE.TextureLoader().load(waterTexture, function (texture) { texture.wrapS = texture.wrapT = THREE.RepeatWrapping; }),
             alpha: 0.5,
             waterColor: 0x3e89ce,
             distortionScale: 3.7,
-            fog:_scene.fog !== undefined
+            fog: _scene.fog !== undefined
         }
     );
 
@@ -364,18 +357,56 @@ function CreateWaterGeometry()
     _scene.add(water);
     water.rotation.x = - Math.PI / 2;
 }
+// -----------------------------------------------------------------------
+// Sky.js を用いて空を生成
+function CreateSky() {
+    _sky = new Sky();
+    _sky.scale.setScalar(450000);
+    _scene.add(_sky);
 
+    // Sky の設定
+    const sky_uniforms = _sky.material.uniforms;
+    sky_uniforms['turbidity'].value = 10;
+    sky_uniforms['rayleigh'].value = 2;
+    // sky_uniforms['luminance'].value = 1;
+    sky_uniforms['mieCoefficient'].value = 0.005;
+    sky_uniforms['mieDirectionalG'].value = 0.8;
+
+    // 太陽
+    const sunSphere = new THREE.Mesh(
+        new THREE.SphereGeometry(200, 16, 8),
+        new THREE.MeshBasicMaterial({ color: 0xFFFFFF })
+    );
+    _scene.add(sunSphere);
+
+    //Sunの設定
+    const sun_uniforms = _sky.material.uniforms;
+    sun_uniforms['turbidity'].value = 5;
+    sun_uniforms['rayleigh'].value = 2;
+    sun_uniforms['mieCoefficient'].value = 0.005;
+    sun_uniforms['mieDirectionalG'].value = 0.8;
+    // sun_uniforms['luminance'].value = 1;
+
+    const theta = Math.PI * (-0.01);
+    const phi = 2 * Math.PI * (-0.25);
+    const distance = 400000;
+    sunSphere.position.x = distance * Math.cos(phi);
+    sunSphere.position.y = distance * Math.sin(phi) * Math.sin(theta);
+    sunSphere.position.z = distance * Math.sin(phi) * Math.cos(theta);
+    sunSphere.visible = true;
+    sun_uniforms['sunPosition'].value.copy(sunSphere.position);
+}
 
 // -----------------------------------------------------------------------
 // 確認用グリッドと座標軸を作成
-function CreateHelper(){
+function CreateHelper() {
     //座標軸の生成
     const axes = new THREE.AxesHelper(1000);
-    axes.position.set(0,0,0);
+    axes.position.set(0, 0, 0);
     _scene.add(axes);
 
     //グリッドの生成
-    const grid = new THREE.GridHelper(100,100);
+    const grid = new THREE.GridHelper(100, 100);
     _scene.add(grid);
 }
 //#endregion
