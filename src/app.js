@@ -11,7 +11,8 @@ import { Sky } from 'three/examples/jsm/objects/Sky.js';
 
 import "./style.css";
 import "./Assets/blue_whale.glb";
-import waterTexture from "./Assets/Water_1_M_Normal.jpg";
+// import waterTexture from "./Assets/Water_1_M_Normal.jpg";
+import waterTexture from "./Assets/waternormals.jpg";
 
 // ================================================================================================
 // for Debug
@@ -226,13 +227,16 @@ function init() {
     });
     // レンダラーのサイズを変更
     _renderer.setSize(windowWidth, windowHeight);
+    _renderer.setPixelRatio(window.devicePixelRatio);
+    _renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    _renderer.toneMappingExposure = 0.5;
     // _renderer.setClearColor(0xffffff, 1);
-    _renderer.setClearColor(0x000000, 1);
+    // _renderer.setClearColor(0x000000, 1);
 
     // シーンの作成
     _scene = new THREE.Scene();
     // カメラの作成
-    _camera = new THREE.PerspectiveCamera(70, windowWidth / windowHeight, 0.1, 1000);
+    _camera = new THREE.PerspectiveCamera(55, windowWidth / windowHeight, 1, 20000);
     _camera.position.set(-15, 15, 15);
     _scene.add(_camera);
     // 常にカメラの向きを原点に
@@ -338,15 +342,17 @@ function ConvertTextToMesh(text) {
 // -----------------------------------------------------------------------
 // Water.js を用いて 海を生成
 function CreateWaterGeometry() {
-    const waterGeometry = new THREE.PlaneGeometry(1000, 1000);
+    const waterGeometry = new THREE.PlaneGeometry(10000, 10000);
 
     water = new Water(
         waterGeometry,
         {
             textureWidth: 512,
             textureHeight: 512,
-            waterNormal: new THREE.TextureLoader().load(waterTexture, function (texture) { texture.wrapS = texture.wrapT = THREE.RepeatWrapping; }),
-            alpha: 0.5,
+            waterNormals: new THREE.TextureLoader().load(waterTexture, function (texture) { texture.wrapS = texture.wrapT = THREE.RepeatWrapping; }),
+            // sunDirection: new THREE.Vector3(),
+            // sunColor: 0xffffff,
+            // alpha: 0.5,
             waterColor: 0x3e89ce,
             distortionScale: 3.7,
             fog: _scene.fog !== undefined
@@ -354,21 +360,20 @@ function CreateWaterGeometry() {
     );
 
     // シーンに追加
-    _scene.add(water);
     water.rotation.x = - Math.PI / 2;
+    _scene.add(water);
 }
 // -----------------------------------------------------------------------
 // Sky.js を用いて空を生成
 function CreateSky() {
     _sky = new Sky();
-    _sky.scale.setScalar(450000);
+    _sky.scale.setScalar(10000);
     _scene.add(_sky);
 
     // Sky の設定
     const sky_uniforms = _sky.material.uniforms;
     sky_uniforms['turbidity'].value = 10;
     sky_uniforms['rayleigh'].value = 2;
-    // sky_uniforms['luminance'].value = 1;
     sky_uniforms['mieCoefficient'].value = 0.005;
     sky_uniforms['mieDirectionalG'].value = 0.8;
 
