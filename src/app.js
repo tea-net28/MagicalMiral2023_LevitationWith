@@ -227,6 +227,9 @@ let water;
 let _sky;
 let _modelLoader;
 
+let _mixer;
+let _clock = new THREE.Clock();
+
 function init() {
     // レンダラーの作成
     _renderer = new THREE.WebGLRenderer({
@@ -253,15 +256,15 @@ function init() {
     orbitControls = new OrbitControls(_camera, _canvas);
 
     // 立方体の作成
-    const geometry = new THREE.BoxGeometry(2, 2, 2);
-    const material = new THREE.MeshStandardMaterial({
-        color: 0x0000ff
-    });
+    // const geometry = new THREE.BoxGeometry(2, 2, 2);
+    // const material = new THREE.MeshStandardMaterial({
+    //     color: 0x0000ff
+    // });
     // メッシュを作成
-    const box = new THREE.Mesh(geometry, material);
-    box.position.set(0, 5, 0);
+    // const box = new THREE.Mesh(geometry, material);
+    // box.position.set(0, 5, 0);
     // シーンに追加
-    _scene.add(box);
+    // _scene.add(box);
 
     // ライトの作成
     const light = new THREE.DirectionalLight(0xffffff);
@@ -314,6 +317,11 @@ function render() {
 
     // Camera Control
     orbitControls.update();
+
+    //Animation Mixerを実行
+    if (_mixer) {
+        _mixer.update(_clock.getDelta());
+    }
 
     // 描画
     _renderer.render(_scene, _camera);
@@ -421,14 +429,31 @@ function LoadGLTF(modelPath) {
         whaleModel,
         // called when the resource is loaded
         function (gltf) {
+            let obj = gltf.scene;
+            obj.position.set(0, 10, 0);
 
-            _scene.add(gltf.scene);
 
-            gltf.animations; // Array<THREE.AnimationClip>
+            const animations = gltf.animations; // Array<THREE.AnimationClip>
             gltf.scene; // THREE.Group
             gltf.scenes; // Array<THREE.Group>
             gltf.cameras; // Array<THREE.Camera>
             gltf.asset; // Object
+
+            // アニメーションクリップを作成
+            if (animations && animations.length) {
+                // Animation Mixer
+                _mixer = new THREE.AnimationMixer(obj);
+
+                for (let i = 0; i < animations.length; i++) {
+                    let animation = animations[i];
+                    let action = _mixer.clipAction(animation);
+                    action.setLoop(THREE.LoopRepeat);
+                    action.clampWhenFinished = false;
+                    action.play();
+                }
+            }
+
+            _scene.add(obj);
 
             Logger("glTF モデルを読み込みました");
         },
