@@ -39,6 +39,11 @@ module.exports = {
                 // 3D モデル
                 test: /\.glb$/,
                 type: "asset/resource"
+            },
+            {
+                // JSON ファイル
+                test: /\.json$/,
+                type: "asset/resource"
             }
         ],
     },
