@@ -35,7 +35,6 @@ function LoggerError(text) {
 
 // ================================================================================================
 // #region Text Alive
-// const { Player } = TextAliveApp;
 
 // 単語が発声されたら #text に表示する
 const animateWord = function (now, unit) {
@@ -193,38 +192,37 @@ function onTimeUpdate(position) {
 
             // メッシュを作成
             // const mesh = ConvertTextToMesh(currentPhrase.text);
-            const mesh = CreateTextMesh(currentPhrase.text);
-            lyrics.push({
-                obj: currentPhrase,
-                mesh: mesh
-            });
-            Logger("Lyrics push");
+            CreateTextMesh(currentPhrase);
+            // lyrics.push({
+            //     obj: currentPhrase,
+            //     mesh: textMesh
+            // });
+            // Logger("Lyrics push");
         }
 
         currentPhrase = currentPhrase.next;
     }
 
     // 歌詞メッシュをシーンに追加
-    lyrics.forEach((value, index) => {
-        try {
-            // Logger("Add mesh to scene");
-            // value.mesh.position.x = index % 3 - 1;
-            // value.mesh.position.y = -index;
-            // value.mesh.position.z = index % 3 - 1;
-            // value.mesh.visible = true;
-            const posX = ((index % 3) - 1) * 0;
-            const posZ = (value.obj.startTime - (playerProgress.position || 0) * 0.5 + 10) / 100;
-            // Logger(posZ);
-            // value.mesh.position.set(posX, 0, 0);
-
-            _scene.add(value.mesh);
-            Logger("Add mesh to scene");
-        }
-        catch (error) {
-            LoggerError(error);
-        }
-
-    });
+    // lyrics.forEach((value, index) => {
+    //     try {
+    //         // Logger("Add mesh to scene");
+    //         // value.mesh.position.x = index % 3 - 1;
+    //         // value.mesh.position.y = -index;
+    //         // value.mesh.position.z = index % 3 - 1;
+    //         // value.mesh.visible = true;
+    //         const posX = ((index % 3) - 1) * 0;
+    //         const posZ = (value.obj.startTime - (playerProgress.position || 0) * 0.5 + 10) / 100;
+    //         // Logger(posZ);
+    //         Logger(value.mesh);
+    //         value.mesh.position.x = posX;
+    //         _scene.add(value.mesh);
+    //         Logger("Add mesh to scene");
+    //     }
+    //     catch (error) {
+    //         LoggerError(error);
+    //     }
+    // });
 }
 //#endregion
 // -----------------------------------------------------------------------
@@ -237,6 +235,7 @@ window.addEventListener("DOMContentLoaded", init);
 const windowWidth = window.innerWidth;
 const windowHeight = window.innerHeight;
 
+let _settings;
 let _renderer, _scene, _camera;
 let orbitControls;
 let water;
@@ -245,6 +244,8 @@ let _modelLoader;
 
 let _mixer;
 let _clock = new THREE.Clock();
+
+let _lyricObjects = [];
 // -----------------------------------------------------------------------
 // Initialize
 function init() {
@@ -254,7 +255,7 @@ function init() {
     });
     // レンダラーのサイズを変更
     _renderer.setSize(windowWidth, windowHeight);
-    _renderer.setPixelRatio(window.devicePixelRatio);
+    _renderer.setPixelRatio(1);
     _renderer.toneMapping = THREE.ACESFilmicToneMapping;
     _renderer.toneMappingExposure = 0.5;
     // _renderer.setClearColor(0xffffff, 1);
@@ -263,7 +264,7 @@ function init() {
     // シーンの作成
     _scene = new THREE.Scene();
     // カメラの作成
-    _camera = new THREE.PerspectiveCamera(55, windowWidth / windowHeight, 1, 10000);
+    _camera = new THREE.PerspectiveCamera(55, windowWidth / windowHeight, 1, 1000);
     _camera.position.set(-15, 15, 15);
     _scene.add(_camera);
     // 常にカメラの向きを原点に
@@ -314,24 +315,26 @@ function init() {
 function render() {
     if (playerProgress.isPlaying) {
         // 歌詞オブジェクトの位置を更新
-        lyrics.forEach((line, index) => {
-            if (line.obj.startTime < playerProgress.position + 5000 && line.obj.endTime < (playerProgress.position + 200000)) {
+        _lyricObjects.forEach((obj, index) => {
+            if (obj.phrase.startTime < playerProgress.position + 10000 && obj.phrase.endTime < (playerProgress.position + 20000)) {
                 // line.mesh.visible = true;
                 // line.mesh.position.x = (line.obj.startTime - (playerProgress.position || 0) * 0.5 + 10) / 100;
                 // line.mesh.position.y = (line.obj.startTime - (playerProgress.position || 0)) / 500;
-                // Logger(line.mesh.position.x);
-                // Logger(line.obj.startTime);
+                obj.mesh.position.x = ((index % 3) - 1) * 25;
+                obj.mesh.position.z = (obj.phrase.startTime - (playerProgress.position || 0) + 100) / 10;
             }
             else {
                 // line.mesh.visible = false;
-                _scene.remove(line.mesh);
+                _scene.remove(obj.mesh);
+                _lyricObjects.splice(index, 1);
+                Logger(`removeObject`)
             }
         });
     }
 
     // water
     if (water !== undefined && water !== null) {
-        water.material.uniforms['time'].value += 1.0 / 60.0;
+        water.material.uniforms['time'].value += 1.0 / 120.0;
     }
 
     // Camera Control
@@ -379,39 +382,67 @@ function ConvertTextToMesh(text) {
 }
 
 // FontLoader.js を用いて テキストメッシュを生成
-function CreateTextMesh(text) {
-    const loader = new FontLoader();
-    loader.load(textJson, function (font) {
-        const color = 0xffffff;
-        Logger("Text Loaded")
-        // マテリアルの設定
-        const matLite = new THREE.MeshBasicMaterial({
-            color: color,
-            transparent: true,
-            opacity: 1.0,
-            side: THREE.DoubleSide
+async function CreateTextMesh(phrase) {
+    try {
+        const loader = new FontLoader();
+        loader.loadAsync(textJson).then((loadedFont) => {
+            const color = 0xffffff;
+            // マテリアルの設定
+            const matLite = new THREE.MeshBasicMaterial({
+                color: color,
+                transparent: true,
+                opacity: 1.0,
+                side: THREE.DoubleSide
+            });
+
+            // ジオメトリを作成
+            const shapes = loadedFont.generateShapes(phrase.text, 1.5);
+            const geometry = new THREE.ShapeGeometry(shapes);
+
+            // const textGeometry = new TextGeometry(phrase.text, {
+            //     font: loadedFont,
+            //     size: 0.5,
+            //     height: 0.02,
+            //     curveSegments: 12,
+            //     bevelEnabled: true,
+            //     bevelThickness: 0.03,
+            //     bevelSize: 0.02,
+            //     bevelOffset: 0,
+            //     bevelSegments: 5,
+            // });
+            // Logger("Text Loaded")
+
+            // // BoundingBox を作成し X 中心にテキストの中心を移動
+            geometry.center();
+            // geometry.computeBoundingBox();
+            // const xMid = -0.5 * (geometry.boundingBox.max.x - geometry.boundingBox.min.x);
+            // geometry.translate(xMid, 0, 0);
+            // // textGeometry.center();
+
+            // // メッシュを作成
+            const textMesh = new THREE.Mesh(geometry, matLite);
+            // const textMesh = new THREE.Mesh(textGeometry, matLite);
+            _scene.add(textMesh);
+
+            // オブジェクトを作成・配列に追加
+            let obj = {
+                phrase: phrase,
+                mesh: textMesh
+            };
+            _lyricObjects.push(obj);
+            // return textMesh;
         });
 
-        // ジオメトリを作成
-        const shapes = font.generateShapes(text, 1.5);
-        const geometry = new THREE.ShapeGeometry(shapes);
-
-        // BoundingBox を作成し X 中心にテキストの中心を移動
-        geometry.computeBoundingBox();
-        const xMid = -0.5 * (geometry.boundingBox.max.x - geometry.boundingBox.min.x);
-        geometry.translate(xMid, 0, 0);
-
-        // メッシュを作成
-        const textMesh = new THREE.Mesh(geometry, matLite);
-        // _scene.add(textMesh);
-        return textMesh;
-    });
+    } catch (error) {
+        LoggerError(error);
+        return null;
+    }
 }
 
 // -----------------------------------------------------------------------
 // Water.js を用いて 海を生成
 function CreateWaterGeometry() {
-    const waterGeometry = new THREE.PlaneGeometry(10000, 10000);
+    const waterGeometry = new THREE.PlaneGeometry(1000, 1000);
 
     water = new Water(
         waterGeometry,
@@ -436,7 +467,7 @@ function CreateWaterGeometry() {
 // Sky.js を用いて空を生成
 function CreateSky() {
     _sky = new Sky();
-    _sky.scale.setScalar(10000);
+    _sky.scale.setScalar(1000);
     _scene.add(_sky);
 
     // Sky の設定
@@ -462,7 +493,7 @@ function CreateSky() {
 
     const theta = Math.PI * (-0.01);
     const phi = 2 * Math.PI * (-0.25);
-    const distance = 400000;
+    const distance = 40000;
     sunSphere.position.x = distance * Math.cos(phi);
     sunSphere.position.y = distance * Math.sin(phi) * Math.sin(theta);
     sunSphere.position.z = distance * Math.sin(phi) * Math.cos(theta);
