@@ -137,9 +137,12 @@ function onAppReady(app) {
     // 歌詞頭出しボタン / Seek to the first character in lyrics text
     jumpBtn.addEventListener(
         "click",
-        () =>
+        () => {
             player.video &&
-            player.requestMediaSeek(player.video.firstChar.startTime)
+                player.requestMediaSeek(player.video.firstChar.startTime);
+            c = player.video.firstPhrase
+        }
+
     );
 
     // 一時停止ボタン / Pause music playback
@@ -151,7 +154,10 @@ function onAppReady(app) {
     // 巻き戻しボタン / Rewind music playback
     rewindBtn.addEventListener(
         "click",
-        () => player.video && player.requestMediaSeek(0)
+        () => {
+            player.video && player.requestMediaSeek(0);
+            c = player.video.firstPhrase;
+        }
     );
 }
 
@@ -183,15 +189,15 @@ function onTimeUpdate(position) {
         // 新しい文字の場合は更新
         if (c !== currentPhrase) {
             // div 要素を作成し その中にテキストを入れる
-            const div = document.createElement("div");
-            div.appendChild(document.createTextNode(currentPhrase.text));
+            // const div = document.createElement("div");
+            // div.appendChild(document.createTextNode(currentPhrase.text));
             // textContainer の子要素として追加
-            textContainer.appendChild(div);
+            // textContainer.appendChild(div);
 
             c = currentPhrase;
 
             // メッシュを作成
-            // const mesh = ConvertTextToMesh(currentPhrase.text);
+            // ConvertTextToMesh(currentPhrase);
             CreateTextMesh(currentPhrase);
             // lyrics.push({
             //     obj: currentPhrase,
@@ -235,7 +241,6 @@ window.addEventListener("DOMContentLoaded", init);
 const windowWidth = window.innerWidth;
 const windowHeight = window.innerHeight;
 
-let _settings;
 let _renderer, _scene, _camera;
 let orbitControls;
 let water;
@@ -246,6 +251,9 @@ let _mixer;
 let _clock = new THREE.Clock();
 
 let _lyricObjects = [];
+
+let animationChangePoint = [0, 50000, 95000, 131000, 153000, 174000, 195000, 222000];
+
 // -----------------------------------------------------------------------
 // Initialize
 function init() {
@@ -316,17 +324,49 @@ function render() {
     if (playerProgress.isPlaying) {
         // 歌詞オブジェクトの位置を更新
         _lyricObjects.forEach((obj, index) => {
-            if (obj.phrase.startTime < playerProgress.position + 10000 && obj.phrase.endTime < (playerProgress.position + 20000)) {
-                // line.mesh.visible = true;
-                // line.mesh.position.x = (line.obj.startTime - (playerProgress.position || 0) * 0.5 + 10) / 100;
-                // line.mesh.position.y = (line.obj.startTime - (playerProgress.position || 0)) / 500;
-                obj.mesh.position.x = ((index % 3) - 1) * 25;
-                obj.mesh.position.z = (obj.phrase.startTime - (playerProgress.position || 0) + 100) / 10;
+            if (obj.phrase.startTime < playerProgress.position + 10000 && obj.phrase.endTime < (playerProgress.position + 20000))
+            {
+                // 現在の再生位置に応じて アニメーションを変化させる
+                if (obj.phrase.startTime <= animationChangePoint[1]) {
+                    obj.mesh.position.x = ((index % 3) - 1) * 25;
+                    obj.mesh.position.z = (obj.phrase.startTime - (playerProgress.position || 0)) / 20 + 150;
+                }
+                else if (animationChangePoint[1] < obj.phrase.startTime && obj.phrase.startTime <= animationChangePoint[2]) {
+                    obj.mesh.position.x = 50 * Math.sin(Math.PI * (40 * (index + 2)) / 180);
+                    obj.mesh.position.y = -1 * (obj.phrase.startTime - (playerProgress.position || 0)) / 100 + 10;
+                    obj.mesh.position.z = 50 * Math.cos(Math.PI * (40 * (index + 2)) / 180);
+                }
+                else if (animationChangePoint[2] < obj.phrase.startTime && obj.phrase.startTime <= animationChangePoint[3]) {
+                    obj.mesh.position.x = ((index % 3) - 1) * 25;
+                    obj.mesh.position.z = (obj.phrase.startTime - (playerProgress.position || 0)) / 20 + 150;
+                }
+                else if (animationChangePoint[3] < obj.phrase.startTime && obj.phrase.startTime <= animationChangePoint[4]) {
+                    obj.mesh.position.x = 25 * Math.sin(Math.PI * (45 * (index + 5)) / 180);
+                    obj.mesh.position.y = -1 * (obj.phrase.startTime - (playerProgress.position || 0)) / 100 + 10;
+                    obj.mesh.position.z = 25 * Math.cos(Math.PI * (45 * (index + 5)) / 180);
+                }
+                else if (animationChangePoint[4] < obj.phrase.startTime && obj.phrase.startTime <= animationChangePoint[5]) {
+                    obj.mesh.position.x = ((index % 3) - 1) * 25;
+                    obj.mesh.position.z = (obj.phrase.startTime - (playerProgress.position || 0)) / 20 + 150;
+                }
+                else if (animationChangePoint[5] < obj.phrase.startTime && obj.phrase.startTime <= animationChangePoint[6]) {
+                    obj.mesh.position.x = -1 * (obj.phrase.startTime - (playerProgress.position || 0)) / 150;
+                    obj.mesh.position.y = 15;
+                    obj.mesh.position.z = 25
+                }
+                else if (animationChangePoint[6] < obj.phrase.startTime && obj.phrase.startTime <= animationChangePoint[7]) {
+                    obj.mesh.position.x = 75 * Math.sin(Math.PI * (36 * (index + 4)) / 180);
+                    obj.mesh.position.y = -1 * (obj.phrase.startTime - (playerProgress.position || 0)) / 100 + 10;
+                    obj.mesh.position.z = 75 * Math.cos(Math.PI * (36 * (index + 4)) / 180);
+                }
+                else if (animationChangePoint[7] < obj.phrase.startTime) {
+                    obj.mesh.position.x = -1 * (obj.phrase.startTime - (playerProgress.position || 0)) / 30;
+                    obj.mesh.position.y = 15;
+                }
             }
             else {
-                // line.mesh.visible = false;
                 _scene.remove(obj.mesh);
-                _lyricObjects.splice(index, 1);
+                // _lyricObjects.splice(index, 1);
                 Logger(`removeObject`)
             }
         });
@@ -357,24 +397,35 @@ function render() {
  * @param {string} メッシュに変換したい文字列
  * @returns {THREE.Mesh} THREE.Mesh 形式のテキスト
  */
-function ConvertTextToMesh(text) {
+function ConvertTextToMesh(phrase) {
     try {
-        Logger("Convert text to mesh");
         const canvas = document.createElement('canvas');
-        canvas.width = text.length * (512 + 32);
+        canvas.width = phrase.text.length * (512 + 32);
         canvas.height = 512 + 32;
 
         const context = canvas.getContext('2d');
         context.font = "420px sans";
         // context.fillStyle = "#393939";
         context.fillStyle = "#EEEEEE";
-        context.fillText(text, 0, 512);
+        context.fillText(phrase.text, 0, 512);
 
-        const planeGeometry = new THREE.PlaneGeometry(text.length, 1);
+        const planeGeometry = new THREE.PlaneGeometry(phrase.text.length, 1);
         const meshBasicMaterial = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true });
         const mesh = new THREE.Mesh(planeGeometry, meshBasicMaterial);
 
-        return mesh;
+        mesh.position.y = 5;
+
+        _scene.add(mesh);
+
+        // オブジェクトを作成・配列に追加
+        let obj = {
+            phrase: phrase,
+            mesh: mesh
+        };
+        _lyricObjects.push(obj);
+        Logger("Convert text to mesh");
+
+        // return mesh;
     }
     catch (error) {
         console.error(error);
@@ -422,6 +473,8 @@ async function CreateTextMesh(phrase) {
             // // メッシュを作成
             const textMesh = new THREE.Mesh(geometry, matLite);
             // const textMesh = new THREE.Mesh(textGeometry, matLite);
+            textMesh.position.y = 5;
+            textMesh.rotation.y = Math.PI;
             _scene.add(textMesh);
 
             // オブジェクトを作成・配列に追加
