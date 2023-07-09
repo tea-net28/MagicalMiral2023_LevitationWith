@@ -253,6 +253,7 @@ let _clock = new THREE.Clock();
 let _lyricObjects = [];
 
 let animationChangePoint = [0, 50000, 95000, 131000, 153000, 174000, 195000, 222000];
+const fadeOutDuration = 1000; // フェードアウトの時間（ミリ秒）
 
 // -----------------------------------------------------------------------
 // Initialize
@@ -332,9 +333,9 @@ function render() {
                     obj.mesh.position.z = (obj.phrase.startTime - (playerProgress.position || 0)) / 20 + 150;
                 }
                 else if (animationChangePoint[1] < obj.phrase.startTime && obj.phrase.startTime <= animationChangePoint[2]) {
-                    obj.mesh.position.x = 50 * Math.sin(Math.PI * (40 * (index + 2)) / 180);
+                    obj.mesh.position.x = 50 * Math.sin(Math.PI * (40 * (index + 1)) / 180);
                     obj.mesh.position.y = -1 * (obj.phrase.startTime - (playerProgress.position || 0)) / 100 + 10;
-                    obj.mesh.position.z = 50 * Math.cos(Math.PI * (40 * (index + 2)) / 180);
+                    obj.mesh.position.z = 50 * Math.cos(Math.PI * (40 * (index + 1)) / 180);
                 }
                 else if (animationChangePoint[2] < obj.phrase.startTime && obj.phrase.startTime <= animationChangePoint[3]) {
                     obj.mesh.position.x = ((index % 3) - 1) * 25;
@@ -350,9 +351,13 @@ function render() {
                     obj.mesh.position.z = (obj.phrase.startTime - (playerProgress.position || 0)) / 20 + 150;
                 }
                 else if (animationChangePoint[5] < obj.phrase.startTime && obj.phrase.startTime <= animationChangePoint[6]) {
-                    obj.mesh.position.x = -1 * (obj.phrase.startTime - (playerProgress.position || 0)) / 150;
+                    // obj.mesh.position.x = -1 * (obj.phrase.startTime - (playerProgress.position || 0)) / 150;
                     obj.mesh.position.y = 15;
-                    obj.mesh.position.z = 25
+                    obj.mesh.position.z = 25 + (index % 5);
+
+                    // Fade Out Animation
+                    if (obj.phrase.startTime - (playerProgress.position || 0) < 0)
+                        obj.material.opacity -= 1.0 / fadeOutDuration * (1000 / 60);
                 }
                 else if (animationChangePoint[6] < obj.phrase.startTime && obj.phrase.startTime <= animationChangePoint[7]) {
                     obj.mesh.position.x = 75 * Math.sin(Math.PI * (36 * (index + 4)) / 180);
@@ -443,7 +448,8 @@ async function CreateTextMesh(phrase) {
                 color: color,
                 transparent: true,
                 opacity: 1.0,
-                side: THREE.DoubleSide
+                side: THREE.DoubleSide,
+                blending: THREE.AdditiveBlending
             });
 
             // ジオメトリを作成
@@ -480,7 +486,8 @@ async function CreateTextMesh(phrase) {
             // オブジェクトを作成・配列に追加
             let obj = {
                 phrase: phrase,
-                mesh: textMesh
+                mesh: textMesh,
+                material: matLite
             };
             _lyricObjects.push(obj);
             // return textMesh;
