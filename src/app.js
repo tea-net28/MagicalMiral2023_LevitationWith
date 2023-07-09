@@ -92,6 +92,7 @@ let playerProgress = {
 };
 
 let c = null;
+let phrases = [];
 
 // -----------------------------------------------------------------------
 //#region Evect Listener
@@ -110,6 +111,13 @@ function onVideoReady(v) {
     // アーティスト名・楽曲名を表示
     artistSpan.textContent = player.data.song.artist.name;
     songSpan.textContent = player.data.song.name;
+
+    // 予め歌詞のメッシュを作成する
+    phrases = player.video.phrases;
+    phrases.forEach((value, index) => {
+        CreateTextMesh(value);
+    });
+    Logger("歌詞のメッシュの生成が完了");
 
     // 再生
     // MEMO: ここで再生リクエストをすると エラーが発生して再生されなかった。
@@ -179,6 +187,8 @@ function onPause() {
 function onTimeUpdate(position) {
     // 構造体の更新
     playerProgress.position = position;
+    // シークバーの表示を更新
+    paintedSeekbar.style.width = `${parseInt((playerProgress.position * 1000) / player.video.duration) / 10}%`;
     // 歌詞情報があるか
     if (!player.video.firstChar)
         return;
@@ -201,11 +211,10 @@ function onTimeUpdate(position) {
 
             // メッシュを作成
             // ConvertTextToMesh(currentPhrase);
-            CreateTextMesh(currentPhrase);
+            // CreateTextMesh(currentPhrase);
         }
 
-        // シークバーの表示を更新
-        paintedSeekbar.style.width = `${parseInt((position * 1000) / player.video.duration) / 10}%`;
+
 
         currentPhrase = currentPhrase.next;
     }
@@ -317,6 +326,7 @@ function render() {
         // 歌詞オブジェクトの位置を更新
         _lyricObjects.forEach((obj, index) => {
             if (obj.phrase.startTime < playerProgress.position + 10000 && obj.phrase.endTime < (playerProgress.position + 20000)) {
+                obj.mesh.visible = true;
                 // 現在の再生位置に応じて アニメーションを変化させる
                 if (obj.phrase.startTime <= animationChangePoint[1]) {
                     obj.mesh.position.x = ((index % 3) - 1) * 25;
@@ -341,7 +351,6 @@ function render() {
                     obj.mesh.position.z = (obj.phrase.startTime - (playerProgress.position || 0)) / 20 + 150;
                 }
                 else if (animationChangePoint[5] < obj.phrase.startTime && obj.phrase.startTime <= animationChangePoint[6]) {
-                    // obj.mesh.position.x = -1 * (obj.phrase.startTime - (playerProgress.position || 0)) / 150;
                     obj.mesh.position.y = 15;
                     obj.mesh.position.z = 25 + (index % 5);
 
@@ -358,11 +367,15 @@ function render() {
                     obj.mesh.position.x = -1 * (obj.phrase.startTime - (playerProgress.position || 0)) / 30;
                     obj.mesh.position.y = 15;
                 }
+                else {
+                    obj.mesh.visible = false;
+                }
             }
             else {
-                _scene.remove(obj.mesh);
+                obj.mesh.visible = false;
+                // _scene.remove(obj.mesh);
                 // _lyricObjects.splice(index, 1);
-                Logger(`removeObject`)
+                // Logger(`removeObject`)
             }
         });
     }
@@ -471,6 +484,7 @@ async function CreateTextMesh(phrase) {
             // const textMesh = new THREE.Mesh(textGeometry, matLite);
             textMesh.position.y = 5;
             textMesh.rotation.y = Math.PI;
+            textMesh.visible = false;
             _scene.add(textMesh);
 
             // オブジェクトを作成・配列に追加
