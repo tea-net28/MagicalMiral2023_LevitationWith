@@ -73,6 +73,10 @@ const positionEl = document.querySelector("#position strong");
 const artistSpan = document.querySelector("#artist span");
 const songSpan = document.querySelector("#song span");
 
+// Seekbar
+const seekbar = document.querySelector("#seekbar");
+const paintedSeekbar = seekbar.querySelector("div");
+
 // プレイヤーの情報の構造体
 let playerProgress = {
     position: null,
@@ -88,7 +92,6 @@ let playerProgress = {
 };
 
 let c = null;
-let lyrics = [];
 
 // -----------------------------------------------------------------------
 //#region Evect Listener
@@ -199,38 +202,26 @@ function onTimeUpdate(position) {
             // メッシュを作成
             // ConvertTextToMesh(currentPhrase);
             CreateTextMesh(currentPhrase);
-            // lyrics.push({
-            //     obj: currentPhrase,
-            //     mesh: textMesh
-            // });
-            // Logger("Lyrics push");
         }
+
+        // シークバーの表示を更新
+        paintedSeekbar.style.width = `${parseInt((position * 1000) / player.video.duration) / 10}%`;
 
         currentPhrase = currentPhrase.next;
     }
-
-    // 歌詞メッシュをシーンに追加
-    // lyrics.forEach((value, index) => {
-    //     try {
-    //         // Logger("Add mesh to scene");
-    //         // value.mesh.position.x = index % 3 - 1;
-    //         // value.mesh.position.y = -index;
-    //         // value.mesh.position.z = index % 3 - 1;
-    //         // value.mesh.visible = true;
-    //         const posX = ((index % 3) - 1) * 0;
-    //         const posZ = (value.obj.startTime - (playerProgress.position || 0) * 0.5 + 10) / 100;
-    //         // Logger(posZ);
-    //         Logger(value.mesh);
-    //         value.mesh.position.x = posX;
-    //         _scene.add(value.mesh);
-    //         Logger("Add mesh to scene");
-    //     }
-    //     catch (error) {
-    //         LoggerError(error);
-    //     }
-    // });
 }
 //#endregion
+// -----------------------------------------------------------------------
+// シークバー
+seekbar.addEventListener("click", (e) => {
+    e.preventDefault();
+    if (player) {
+        player.requestMediaSeek(
+            (player.video.duration * e.offsetX) / seekbar.clientWidth
+        );
+    }
+    return false;
+});
 // -----------------------------------------------------------------------
 // #endregion
 // ================================================================================================
@@ -325,8 +316,7 @@ function render() {
     if (playerProgress.isPlaying) {
         // 歌詞オブジェクトの位置を更新
         _lyricObjects.forEach((obj, index) => {
-            if (obj.phrase.startTime < playerProgress.position + 10000 && obj.phrase.endTime < (playerProgress.position + 20000))
-            {
+            if (obj.phrase.startTime < playerProgress.position + 10000 && obj.phrase.endTime < (playerProgress.position + 20000)) {
                 // 現在の再生位置に応じて アニメーションを変化させる
                 if (obj.phrase.startTime <= animationChangePoint[1]) {
                     obj.mesh.position.x = ((index % 3) - 1) * 25;
