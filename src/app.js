@@ -92,6 +92,7 @@ let playerProgress = {
     ready: false
 };
 
+let chars = [];
 let phrases = [];
 
 // -----------------------------------------------------------------------
@@ -203,11 +204,9 @@ function onTimeUpdate(position) {
 
     // 文字を取得する
     let currentChar = playerProgress.char || player.video.firstChar;
-    while (currentChar && currentChar.startTime < position + 500)
-    {
+    while (currentChar && currentChar.startTime < position + 500) {
         // 新しい文字の場合は更新
-        if (playerProgress.char !== currentChar)
-        {
+        if (playerProgress.char !== currentChar) {
             playerProgress.char = currentChar;
         }
         currentChar = currentChar.next;
@@ -215,11 +214,9 @@ function onTimeUpdate(position) {
 
     // 単語を取得する
     let currentWord = playerProgress.word || player.video.firstWord;
-    while (currentWord && currentWord.startTime < position + 500)
-    {
+    while (currentWord && currentWord.startTime < position + 500) {
         // 新しい単語の場合は更新
-        if (playerProgress.word !== currentWord)
-        {
+        if (playerProgress.word !== currentWord) {
             playerProgress.word = currentWord;
         }
         currentWord = currentWord.next;
@@ -356,13 +353,15 @@ function render() {
         // 歌詞オブジェクトの位置を更新
         _lyricObjects.forEach((obj, index) => {
             if (obj.phrase.startTime < playerProgress.position + 10000 && obj.phrase.endTime < (playerProgress.position + 20000)) {
-                obj.mesh.visible = true;
+
                 // 現在の再生位置に応じて アニメーションを変化させる
                 if (obj.phrase.startTime <= animationChangePoint[1]) {
+                    obj.mesh.visible = true;
                     obj.mesh.position.x = ((index % 3) - 1) * 25;
                     obj.mesh.position.z = (obj.phrase.startTime - (playerProgress.position || 0)) / 20 + 150;
                 }
                 else if (animationChangePoint[1] < obj.phrase.startTime && obj.phrase.startTime <= animationChangePoint[2]) {
+                    obj.mesh.visible = true;
                     obj.mesh.position.x = 50 * Math.sin(Math.PI * (40 * (index + 1)) / 180);
                     obj.mesh.position.y = -1 * (obj.phrase.startTime - (playerProgress.position || 0)) / 100 + 10;
                     obj.mesh.position.z = 50 * Math.cos(Math.PI * (40 * (index + 1)) / 180);
@@ -370,36 +369,53 @@ function render() {
                     obj.mesh.rotation.y = Math.PI + (Math.PI * (40 * (index + 1)) / 180);
                 }
                 else if (animationChangePoint[2] < obj.phrase.startTime && obj.phrase.startTime <= animationChangePoint[3]) {
+                    obj.mesh.visible = true;
                     obj.mesh.position.x = ((index % 3) - 1) * 25;
                     obj.mesh.position.z = (obj.phrase.startTime - (playerProgress.position || 0)) / 20 + 150;
                 }
                 else if (animationChangePoint[3] < obj.phrase.startTime && obj.phrase.startTime <= animationChangePoint[4]) {
-                    obj.mesh.position.x = 25 * Math.sin(Math.PI * (45 * (-index + 1)) / 180);
+                    obj.mesh.visible = true;
+                    // Logger("Char Instance");
+                    obj.mesh.position.x = 25 * Math.sin(Math.PI * (5 * (-index + 1)) / 180);
                     obj.mesh.position.y = -1 * (obj.phrase.startTime - (playerProgress.position || 0)) / 100 + 10;
-                    obj.mesh.position.z = 25 * Math.cos(Math.PI * (45 * (-index + 1)) / 180);
+                    obj.mesh.position.z = 25 * Math.cos(Math.PI * (5 * (-index + 1)) / 180);
 
-                    obj.mesh.rotation.y = Math.PI + (Math.PI * (40 * (index)) / 180);
+                    obj.mesh.rotation.y = Math.PI + (Math.PI * (5 * (-index + 1)) / 180);
                 }
                 else if (animationChangePoint[4] < obj.phrase.startTime && obj.phrase.startTime <= animationChangePoint[5]) {
+                    obj.mesh.visible = true;
                     obj.mesh.position.x = ((index % 3) - 1) * 25;
                     obj.mesh.position.z = (obj.phrase.startTime - (playerProgress.position || 0)) / 20 + 150;
                 }
                 else if (animationChangePoint[5] < obj.phrase.startTime && obj.phrase.startTime <= animationChangePoint[6]) {
-                    obj.mesh.position.y = 15;
-                    obj.mesh.position.z = 25 + (index % 5);
+                    if (animationChangePoint[5] < playerProgress.position && obj.phrase.startTime < playerProgress.position) {
+                        obj.mesh.visible = true;
+                        obj.mesh.position.y = 15;
+                        obj.mesh.position.z = 25 + (index % 5);
 
-                    // Fade Out Animation
-                    if (obj.phrase.startTime - (playerProgress.position || 0) < 0)
-                        obj.material.opacity -= 1.0 / fadeOutDuration * (1000 / 60);
+                        // Fade Out Animation
+                        if (obj.phrase.endTime - (playerProgress.position || 0) < 1000)
+                            obj.material.opacity -= 1.0 / fadeOutDuration * (1000 / 60);
+                    }
                 }
                 else if (animationChangePoint[6] < obj.phrase.startTime && obj.phrase.startTime <= animationChangePoint[7]) {
-                    obj.mesh.position.x = 75 * Math.sin(Math.PI * (36 * (index + 4)) / 180);
-                    obj.mesh.position.y = -1 * (obj.phrase.startTime - (playerProgress.position || 0)) / 100 + 10;
-                    obj.mesh.position.z = 75 * Math.cos(Math.PI * (36 * (index + 4)) / 180);
+                    if (animationChangePoint[6] < playerProgress.position && obj.phrase.startTime < playerProgress.position)
+                    {
+                        const adjustCount = 2;
+                        obj.mesh.visible = true;
+                        obj.mesh.position.x = 25 * Math.sin(Math.PI * (14 * (-index + adjustCount)) / 180);
+                        obj.mesh.position.y = (index / 6);
+                        obj.mesh.position.z = 25 * Math.cos(Math.PI * (14 * (-index + adjustCount)) / 180);
+                        obj.mesh.rotation.y = Math.PI + (Math.PI * (14 * (-index + adjustCount)) / 180);
+
+                        // Animation
+                        obj.mesh.translateX(Math.max((-3 * ((500 - (playerProgress.position - obj.phrase.startTime)) / 500)), -3));
+                    }
                 }
                 else if (animationChangePoint[7] < obj.phrase.startTime) {
                     obj.mesh.position.x = -1 * (obj.phrase.startTime - (playerProgress.position || 0)) / 30;
                     obj.mesh.position.y = 15;
+                    obj.mesh.position.z = 30;
                 }
                 else {
                     obj.mesh.visible = false;
@@ -494,32 +510,81 @@ async function CreateTextMesh(phrase) {
             });
 
             // ジオメトリを作成
-            const shapes = loadedFont.generateShapes(phrase.text, 1.5);
+            // 指定の範囲の歌詞については 文字単位で作成する
+            if (animationChangePoint[3] < phrase.startTime && phrase.startTime < animationChangePoint[4]) {
+                CreateObjectByChar(loadedFont, matLite, phrase);
+            }
+            else if (animationChangePoint[6] < phrase.startTime && phrase.startTime < animationChangePoint[7]) {
+                // 90文字？
+                CreateObjectByChar(loadedFont, matLite, phrase);
+            }
+            else {
+                const shapes = loadedFont.generateShapes(phrase.text, 1.5);
+                const geometry = new THREE.ShapeGeometry(shapes);
+
+                // const textGeometry = new TextGeometry(phrase.text, {
+                //     font: loadedFont,
+                //     size: 0.5,
+                //     height: 0.02,
+                //     curveSegments: 12,
+                //     bevelEnabled: true,
+                //     bevelThickness: 0.03,
+                //     bevelSize: 0.02,
+                //     bevelOffset: 0,
+                //     bevelSegments: 5,
+                // });
+                // Logger("Text Loaded")
+
+                // // BoundingBox を作成し X 中心にテキストの中心を移動
+                geometry.center();
+                // geometry.computeBoundingBox();
+                // const xMid = -0.5 * (geometry.boundingBox.max.x - geometry.boundingBox.min.x);
+                // geometry.translate(xMid, 0, 0);
+                // // textGeometry.center();
+
+                // // メッシュを作成
+                const textMesh = new THREE.Mesh(geometry, matLite);
+                // const textMesh = new THREE.Mesh(textGeometry, matLite);
+                textMesh.position.y = 5;
+                textMesh.rotation.y = Math.PI;
+                textMesh.visible = false;
+                _scene.add(textMesh);
+
+                // オブジェクトを作成・配列に追加
+                let obj = {
+                    phrase: phrase,
+                    mesh: textMesh,
+                    material: matLite
+                };
+                _lyricObjects.push(obj);
+            }
+
+
+            // return textMesh;
+        });
+
+    } catch (error) {
+        LoggerError(error);
+        // return null;
+    }
+}
+
+function CreateObjectByChar(loadedFont, matLite, phrase) {
+    const word = phrase.children;
+    word.forEach((value, index) => {
+        const char = value.children;
+        char.forEach((value2, index2) => {
+            let text = null;
+            if (value2.text == "、" || value2.text == "。")
+                text = " ";
+            else
+                text = value2.text
+            const shapes = loadedFont.generateShapes(text, 1.5);
             const geometry = new THREE.ShapeGeometry(shapes);
-
-            // const textGeometry = new TextGeometry(phrase.text, {
-            //     font: loadedFont,
-            //     size: 0.5,
-            //     height: 0.02,
-            //     curveSegments: 12,
-            //     bevelEnabled: true,
-            //     bevelThickness: 0.03,
-            //     bevelSize: 0.02,
-            //     bevelOffset: 0,
-            //     bevelSegments: 5,
-            // });
-            // Logger("Text Loaded")
-
-            // // BoundingBox を作成し X 中心にテキストの中心を移動
             geometry.center();
-            // geometry.computeBoundingBox();
-            // const xMid = -0.5 * (geometry.boundingBox.max.x - geometry.boundingBox.min.x);
-            // geometry.translate(xMid, 0, 0);
-            // // textGeometry.center();
 
             // // メッシュを作成
             const textMesh = new THREE.Mesh(geometry, matLite);
-            // const textMesh = new THREE.Mesh(textGeometry, matLite);
             textMesh.position.y = 5;
             textMesh.rotation.y = Math.PI;
             textMesh.visible = false;
@@ -527,18 +592,14 @@ async function CreateTextMesh(phrase) {
 
             // オブジェクトを作成・配列に追加
             let obj = {
-                phrase: phrase,
+                phrase: value2,
                 mesh: textMesh,
                 material: matLite
             };
-            _lyricObjects.push(obj);
-            // return textMesh;
-        });
 
-    } catch (error) {
-        LoggerError(error);
-        return null;
-    }
+            _lyricObjects.push(obj);
+        })
+    })
 }
 
 // -----------------------------------------------------------------------
@@ -610,10 +671,8 @@ function CreateSky() {
 }
 
 // 太陽の位置を更新するメソッド
-function UpdateSun(progress)
-{
-    if (_sun != null)
-    {
+function UpdateSun(progress) {
+    if (_sun != null) {
         const sun_uniforms = _sky.material.uniforms;
         sun_uniforms['turbidity'].value = 5;
         sun_uniforms['rayleigh'].value = 2;
