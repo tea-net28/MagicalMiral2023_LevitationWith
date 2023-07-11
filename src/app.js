@@ -10,7 +10,7 @@ import { Water } from 'three/examples/jsm/objects/Water.js';
 import { Sky } from 'three/examples/jsm/objects/Sky.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
-import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
+// import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
 
 import "./style.css";
 import whaleModel from "./Assets/blue_whale.glb";
@@ -92,7 +92,6 @@ let playerProgress = {
     ready: false
 };
 
-let c = null;
 let phrases = [];
 
 // -----------------------------------------------------------------------
@@ -155,7 +154,9 @@ function onAppReady(app) {
         () => {
             player.video &&
                 player.requestMediaSeek(player.video.firstChar.startTime);
-            c = player.video.firstPhrase
+            playerProgress.phrase = player.video.firstPhrase
+            playerProgress.char = player.video.firstChar;
+            playerProgress.word = player.video.firstWord;
         }
 
     );
@@ -171,7 +172,7 @@ function onAppReady(app) {
         "click",
         () => {
             player.video && player.requestMediaSeek(0);
-            c = player.video.firstPhrase;
+            playerProgress.Phrase = player.video.firstPhrase;
         }
     );
 }
@@ -200,18 +201,42 @@ function onTimeUpdate(position) {
     // MEMO: さらに精確な情報が必要な場合は `player.timer.position` でいつでも取得できます
     positionEl.textContent = String(Math.floor(position));
 
-    // 文字を取得し 画面に表示する
-    let currentPhrase = c || player.video.firstPhrase;
+    // 文字を取得する
+    let currentChar = playerProgress.char || player.video.firstChar;
+    while (currentChar && currentChar.startTime < position + 500)
+    {
+        // 新しい文字の場合は更新
+        if (playerProgress.char !== currentChar)
+        {
+            playerProgress.char = currentChar;
+        }
+        currentChar = currentChar.next;
+    }
+
+    // 単語を取得する
+    let currentWord = playerProgress.word || player.video.firstWord;
+    while (currentWord && currentWord.startTime < position + 500)
+    {
+        // 新しい単語の場合は更新
+        if (playerProgress.word !== currentWord)
+        {
+            playerProgress.word = currentWord;
+        }
+        currentWord = currentWord.next;
+    }
+
+    // フレーズを取得し 画面に表示する
+    let currentPhrase = playerProgress.phrase || player.video.firstPhrase;
     while (currentPhrase && currentPhrase.startTime < position + 5000) {
         // 新しい文字の場合は更新
-        if (c !== currentPhrase) {
+        if (playerProgress.phrase !== currentPhrase) {
             // div 要素を作成し その中にテキストを入れる
             // const div = document.createElement("div");
             // div.appendChild(document.createTextNode(currentPhrase.text));
             // textContainer の子要素として追加
             // textContainer.appendChild(div);
 
-            c = currentPhrase;
+            playerProgress.phrase = currentPhrase;
 
             // メッシュを作成
             // ConvertTextToMesh(currentPhrase);
