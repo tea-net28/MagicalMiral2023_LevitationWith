@@ -80,6 +80,7 @@ const paintedSeekbar = seekbar.querySelector("div");
 // プレイヤーの情報の構造体
 let playerProgress = {
     position: null,
+    duration: null,
     beat: null,
     chorus: null,
     chord: null,
@@ -118,6 +119,9 @@ function onVideoReady(v) {
         CreateTextMesh(value);
     });
     Logger("歌詞のメッシュの生成が完了");
+
+    // 歌詞の時間を取得
+    playerProgress.duration = player.video.duration;
 
     // 再生
     // MEMO: ここで再生リクエストをすると エラーが発生して再生されなかった。
@@ -188,7 +192,7 @@ function onTimeUpdate(position) {
     // 構造体の更新
     playerProgress.position = position;
     // シークバーの表示を更新
-    paintedSeekbar.style.width = `${parseInt((playerProgress.position * 1000) / player.video.duration) / 10}%`;
+    paintedSeekbar.style.width = `${parseInt((playerProgress.position * 1000) / playerProgress.duration) / 10}%`;
     // 歌詞情報があるか
     if (!player.video.firstChar)
         return;
@@ -245,6 +249,7 @@ let _renderer, _scene, _camera;
 let orbitControls;
 let water;
 let _sky;
+let _sun;
 let _modelLoader;
 
 let _mixer;
@@ -336,15 +341,19 @@ function render() {
                     obj.mesh.position.x = 50 * Math.sin(Math.PI * (40 * (index + 1)) / 180);
                     obj.mesh.position.y = -1 * (obj.phrase.startTime - (playerProgress.position || 0)) / 100 + 10;
                     obj.mesh.position.z = 50 * Math.cos(Math.PI * (40 * (index + 1)) / 180);
+
+                    obj.mesh.rotation.y = Math.PI + (Math.PI * (40 * (index + 1)) / 180);
                 }
                 else if (animationChangePoint[2] < obj.phrase.startTime && obj.phrase.startTime <= animationChangePoint[3]) {
                     obj.mesh.position.x = ((index % 3) - 1) * 25;
                     obj.mesh.position.z = (obj.phrase.startTime - (playerProgress.position || 0)) / 20 + 150;
                 }
                 else if (animationChangePoint[3] < obj.phrase.startTime && obj.phrase.startTime <= animationChangePoint[4]) {
-                    obj.mesh.position.x = 25 * Math.sin(Math.PI * (45 * (index + 5)) / 180);
+                    obj.mesh.position.x = 25 * Math.sin(Math.PI * (45 * (-index + 1)) / 180);
                     obj.mesh.position.y = -1 * (obj.phrase.startTime - (playerProgress.position || 0)) / 100 + 10;
-                    obj.mesh.position.z = 25 * Math.cos(Math.PI * (45 * (index + 5)) / 180);
+                    obj.mesh.position.z = 25 * Math.cos(Math.PI * (45 * (-index + 1)) / 180);
+
+                    obj.mesh.rotation.y = Math.PI + (Math.PI * (40 * (index)) / 180);
                 }
                 else if (animationChangePoint[4] < obj.phrase.startTime && obj.phrase.startTime <= animationChangePoint[5]) {
                     obj.mesh.position.x = ((index % 3) - 1) * 25;
@@ -384,6 +393,10 @@ function render() {
     if (water !== undefined && water !== null) {
         water.material.uniforms['time'].value += 1.0 / 120.0;
     }
+
+    // 太陽の位置
+    const progress = playerProgress.position / playerProgress.duration;
+    UpdateSun(progress);
 
     // Camera Control
     orbitControls.update();
@@ -535,11 +548,11 @@ function CreateSky() {
     _scene.add(_sky);
 
     // Sky の設定
-    const sky_uniforms = _sky.material.uniforms;
-    sky_uniforms['turbidity'].value = 10;
-    sky_uniforms['rayleigh'].value = 2;
-    sky_uniforms['mieCoefficient'].value = 0.005;
-    sky_uniforms['mieDirectionalG'].value = 0.8;
+    // const sky_uniforms = _sky.material.uniforms;
+    // sky_uniforms['turbidity'].value = 10;
+    // sky_uniforms['rayleigh'].value = 2;
+    // sky_uniforms['mieCoefficient'].value = 0.005;
+    // sky_uniforms['mieDirectionalG'].value = 0.8;
 
     // 太陽
     const sunSphere = new THREE.Mesh(
@@ -549,20 +562,46 @@ function CreateSky() {
     _scene.add(sunSphere);
 
     //Sunの設定
+    _sun = new THREE.Vector3();
+
     const sun_uniforms = _sky.material.uniforms;
     sun_uniforms['turbidity'].value = 5;
     sun_uniforms['rayleigh'].value = 2;
     sun_uniforms['mieCoefficient'].value = 0.005;
     sun_uniforms['mieDirectionalG'].value = 0.8;
 
-    const theta = Math.PI * (-0.01);
-    const phi = 2 * Math.PI * (-0.25);
-    const distance = 40000;
-    sunSphere.position.x = distance * Math.cos(phi);
-    sunSphere.position.y = distance * Math.sin(phi) * Math.sin(theta);
-    sunSphere.position.z = distance * Math.sin(phi) * Math.cos(theta);
+    const phi = THREE.MathUtils.degToRad(90);
+    const theta = THREE.MathUtils.degToRad(90);
+    _sun.setFromSphericalCoords(1, phi, theta);
+    sun_uniforms['sunPosition'].value.copy(_sun);
+    // const theta = Math.PI * (-0.01);
+    // const phi = 2 * Math.PI * (-0.25);
+    // const distance = 40000;
+    // sunSphere.position.x = distance * Math.cos(phi);
+    // sunSphere.position.y = distance * Math.sin(phi) * Math.sin(theta);
+    // sunSphere.position.z = distance * Math.sin(phi) * Math.cos(theta);
     sunSphere.visible = true;
-    sun_uniforms['sunPosition'].value.copy(sunSphere.position);
+    // sun_uniforms['sunPosition'].value.copy(sunSphere.position);
+}
+
+// 太陽の位置を更新するメソッド
+function UpdateSun(progress)
+{
+    if (_sun != null)
+    {
+        const sun_uniforms = _sky.material.uniforms;
+        sun_uniforms['turbidity'].value = 5;
+        sun_uniforms['rayleigh'].value = 2;
+        sun_uniforms['mieCoefficient'].value = 0.005;
+        sun_uniforms['mieDirectionalG'].value = 0.8;
+
+        const phi = THREE.MathUtils.degToRad(90 - (180 * progress));
+        const theta = THREE.MathUtils.degToRad(90);
+
+        _sun.setFromSphericalCoords(1, phi, theta);
+
+        sun_uniforms['sunPosition'].value.copy(_sun);
+    }
 }
 // -----------------------------------------------------------------------
 // GLTFLoader.js を用いて glTF データを読み込む
