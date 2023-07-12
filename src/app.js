@@ -17,11 +17,12 @@ import whaleModel from "./Assets/blue_whale.glb";
 // import waterTexture from "./Assets/Water_1_M_Normal.jpg";
 import waterTexture from "./Assets/waternormals.jpg";
 import textJson from "./Assets/Rounded Mplus 1c Bold_Bold.json";
+import { Vector3 } from "three";
 
 // ================================================================================================
 // for Debug
 // ================================================================================================
-const isDebug = true;
+const isDebug = false;
 function Logger(text) {
     const style = "color:#93eb4c; background-color: #333333; padding: 0px 10px; display: block;";
     if (isDebug)
@@ -323,23 +324,37 @@ function init() {
     _scene = new THREE.Scene();
     // カメラの作成
     _camera = new THREE.PerspectiveCamera(55, windowWidth / windowHeight, 1, 1000);
-    _camera.position.set(-15, 15, 15);
-    _scene.add(_camera);
+    if (isDebug)
+    {
+        _camera.position.set(-15, 15, 15);
+        _scene.add(_camera);
+        document.addEventListener('touchmove', function (e) { e.preventDefault(); }, { passive: false });
+        orbitControls = new OrbitControls(_camera, _canvas);
+    }
+    else
+    {
+        const vec3 = new Vector3(0, 14, 0.01);
+        _camera.position.set(0, 14, 0);
+        _camera.rotateY(Math.PI);
+        _scene.add(_camera);
+
+        orbitControls = new OrbitControls(_camera, _canvas);
+        orbitControls.target = vec3;
+    }
     // 常にカメラの向きを原点に
     // _camera.lookAt(_scene.position);
     //OrbitControls
-    document.addEventListener('touchmove', function (e) { e.preventDefault(); }, { passive: false });
-    orbitControls = new OrbitControls(_camera, _canvas);
 
-    // 立方体の作成
-    // const geometry = new THREE.BoxGeometry(2, 2, 2);
+
+    // // 立方体の作成
+    // const geometry = new THREE.BoxGeometry(1, 1, 1);
     // const material = new THREE.MeshStandardMaterial({
     //     color: 0x0000ff
     // });
-    // メッシュを作成
+    // // メッシュを作成
     // const box = new THREE.Mesh(geometry, material);
-    // box.position.set(0, 5, 0);
-    // シーンに追加
+    // box.position.set(0, 14, 0);
+    // // シーンに追加
     // _scene.add(box);
 
     // ライトの作成
@@ -432,6 +447,10 @@ function render() {
 
                         // Animation
                         obj.mesh.translateX(Math.max((-3 * ((500 - (playerProgress.position - obj.phrase.startTime)) / 500)), -3));
+
+                        // Fade Out Animation
+                        if (obj.phrase.endTime - (playerProgress.position || 0) < -5000)
+                            obj.material.opacity -= 1.0 / fadeOutDuration * 3 * (1000 / 60);
                     }
                 }
                 else if (animationChangePoint[7] < obj.phrase.startTime) {
@@ -578,7 +597,7 @@ async function CreateTextMesh(phrase) {
                 // // メッシュを作成
                 const textMesh = new THREE.Mesh(geometry, matLite);
                 // const textMesh = new THREE.Mesh(textGeometry, matLite);
-                textMesh.position.y = 5;
+                textMesh.position.y = 20;
                 textMesh.rotation.y = Math.PI;
                 textMesh.visible = false;
                 _scene.add(textMesh);
@@ -759,7 +778,7 @@ function LoadGLTF(modelPath) {
         // called when the resource is loaded
         function (gltf) {
             let obj = gltf.scene;
-            obj.position.set(0, 10, 0);
+            obj.position.set(0, 10, -8);
 
 
             const animations = gltf.animations; // Array<THREE.AnimationClip>
