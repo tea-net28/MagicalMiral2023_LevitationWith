@@ -21,7 +21,7 @@ import textJson from "./Assets/Rounded Mplus 1c Bold_Bold.json";
 // ================================================================================================
 // for Debug
 // ================================================================================================
-const isDebug = false;
+const isDebug = true;
 function Logger(text) {
     const style = "color:#93eb4c; background-color: #333333; padding: 0px 10px; display: block;";
     if (isDebug)
@@ -294,7 +294,7 @@ let _clock = new THREE.Clock();
 
 let _lyricObjects = [];
 
-let animationChangePoint = [0, 50000, 95000, 131000, 153000, 174000, 195000, 222000];
+let animationChangePoint = [0, 50000, 95000, 131000, 153000, 174000, 195000, 215000];
 const fadeOutDuration = 1000; // フェードアウトの時間（ミリ秒）
 
 // -----------------------------------------------------------------------
@@ -435,9 +435,20 @@ function render() {
                     }
                 }
                 else if (animationChangePoint[7] < obj.phrase.startTime) {
-                    obj.mesh.position.x = -1 * (obj.phrase.startTime - (playerProgress.position || 0)) / 30;
-                    obj.mesh.position.y = 15;
-                    obj.mesh.position.z = 30;
+                    if (animationChangePoint[7] < playerProgress.position && obj.phrase.startTime < playerProgress.position) {
+                        obj.mesh.visible = true;
+                        obj.mesh.position.x = 0;
+                        obj.mesh.position.y = 15;
+                        obj.mesh.position.z = 30;
+
+                        // Fade In Animation
+                        if (obj.phrase.startTime - (playerProgress.position || 0) > -500)
+                            obj.material.opacity = Math.min(1.0, obj.material.opacity + 1.0 / fadeOutDuration * (1000 / 60));
+
+                        // Fade Out Animation
+                        if (obj.phrase.endTime - (playerProgress.position || 0) < -1000)
+                            obj.material.opacity -= 1.0 / fadeOutDuration * 3 * (1000 / 60);
+                    }
                 }
                 else {
                     obj.mesh.visible = false;
@@ -580,8 +591,6 @@ async function CreateTextMesh(phrase) {
                 };
                 _lyricObjects.push(obj);
             }
-
-
             // return textMesh;
         });
 
@@ -589,6 +598,35 @@ async function CreateTextMesh(phrase) {
         LoggerError(error);
         // return null;
     }
+}
+
+function CreateObjectByWord(loadedFont, matLite, phrase) {
+    const word = phrase.children;
+    word.forEach((value, index) => {
+        let text = null;
+        text = value.text;
+        Logger(text);
+
+        const shapes = loadedFont.generateShapes(text, 1.5);
+        const geometry = new THREE.ShapeGeometry(shapes);
+        geometry.center();
+
+        // // メッシュを作成
+        const textMesh = new THREE.Mesh(geometry, matLite);
+        textMesh.position.y = 5;
+        textMesh.rotation.y = Math.PI;
+        textMesh.visible = false;
+        _scene.add(textMesh);
+
+        // オブジェクトを作成・配列に追加
+        let obj = {
+            phrase: value,
+            mesh: textMesh,
+            material: matLite
+        };
+
+        _lyricObjects.push(obj);
+    });
 }
 
 function CreateObjectByChar(loadedFont, matLite, phrase) {
