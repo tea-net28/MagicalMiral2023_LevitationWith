@@ -21,7 +21,7 @@ import textJson from "./Assets/Rounded Mplus 1c Bold_Bold.json";
 // ================================================================================================
 // for Debug
 // ================================================================================================
-const isDebug = true;
+const isDebug = false;
 function Logger(text) {
     const style = "color:#93eb4c; background-color: #333333; padding: 0px 10px; display: block;";
     if (isDebug)
@@ -54,14 +54,20 @@ const player = new Player({
 player.addListener({
     onVideoReady,
     onAppReady,
+    onTimerReady,
     onPlay,
     onPause,
     onTimeUpdate,
 });
+// Footer
+const footer = document.querySelector("#footer");
 
+// Overlay
+const overlay = document.querySelector("#overlay");
 // Container
 const textContainer = document.querySelector("#text");
 
+const startBtn = document.querySelector("#startButton");
 // Contol Buttons
 const playBtns = document.querySelectorAll(".play");
 const jumpBtn = document.querySelector("#jump");
@@ -149,6 +155,12 @@ function onAppReady(app) {
             player.video && player.requestPlay();
             textContainer.textContent = "";
         }));
+    startBtn.addEventListener("click", () => {
+        player.video && player.requestPlay();
+        textContainer.textContent = "";
+        overlay.className = "disabled";
+
+    });
     // 歌詞頭出しボタン / Seek to the first character in lyrics text
     jumpBtn.addEventListener(
         "click",
@@ -176,6 +188,9 @@ function onAppReady(app) {
             playerProgress.Phrase = player.video.firstPhrase;
         }
     );
+}
+function onTimerReady() {
+    startBtn.className = "center";
 }
 
 /* 楽曲の再生が始まったら呼ばれる */
@@ -285,6 +300,13 @@ const fadeOutDuration = 1000; // フェードアウトの時間（ミリ秒）
 // -----------------------------------------------------------------------
 // Initialize
 function init() {
+    // UI 周りの設定
+    if (!isDebug)
+    {
+        footer.className = "disabled";
+        textContainer.className = "disabled";
+    }
+
     // レンダラーの作成
     _renderer = new THREE.WebGLRenderer({
         canvas: _canvas

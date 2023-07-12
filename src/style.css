@@ -7,11 +7,67 @@ body {
     padding: 0;
 }
 
+.disable
+{
+    filter: opacity(0.3);
+    touch-action: none;
+    pointer-events: none;
+}
+.center
+{
+    display: block;
+    position: absolute;
+    left: 0;
+    right: 0;
+    margin: 0% auto;
+}
+
 #meta {
     margin: 10px;
     padding: 5px;
     background: rgba(0, 0, 0, 0.2);
     color: white;
+}
+
+/* オーバーレイ / Overlay */
+#overlay {
+    user-select: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    /* display: flex; */
+    /* align-items: center; */
+    background: #0009;
+    color: #fffc;
+    z-index: 99999;
+  }
+.disabled {
+    display: none;
+  }
+  #overlay > p {
+    width: 100vw;
+    font-size: 64px;
+    text-align: center;
+    font-family: 'M PLUS Rounded 1c', sans-serif;
+  }
+
+#startButton {
+    top: 40%;
+    width: 25%;
+    height: 7%;
+    background-color: rgba(245 245 245 / 90%);
+    display: flex;
+    align-items: center;
+}
+
+#startButton > p {
+    width: 100%;
+    color: #333333;
+    font-size: 40px;
+    text-align: center;
+    font-family: 'M PLUS Rounded 1c', sans-serif;
 }
 
 #text {
@@ -26,6 +82,16 @@ body {
 
     font-size: 3em;
     /* text-align: center; */
+    color: white;
+}
+
+#artist,
+#song
+{
+    width: 100%;
+    font-size: 28px;
+    text-align: center;
+    font-family: 'M PLUS Rounded 1c', sans-serif;
     color: white;
 }
 
