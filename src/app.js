@@ -58,6 +58,7 @@ player.addListener({
     onTimerReady,
     onPlay,
     onPause,
+    onStop,
     onTimeUpdate,
 });
 // Footer
@@ -65,10 +66,12 @@ const footer = document.querySelector("#footer");
 
 // Overlay
 const overlay = document.querySelector("#overlay");
+const overlayEnd = document.querySelector("#overlayEnd");
 // Container
 const textContainer = document.querySelector("#text");
 
 const startBtn = document.querySelector("#startButton");
+const replayBtn = document.querySelector("#replayButton");
 // Contol Buttons
 const playBtns = document.querySelectorAll(".play");
 const jumpBtn = document.querySelector("#jump");
@@ -181,6 +184,12 @@ function onAppReady(app) {
             playerProgress.Phrase = player.video.firstPhrase;
         }
     );
+    replayBtn.addEventListener("click", () => {
+        player.video && player.requestMediaSeek(0);
+        playerProgress.Phrase = player.video.firstPhrase;
+        player.requestPlay();
+        overlayEnd.className = "disabled";
+    });
 }
 function onTimerReady() {
     startBtn.className = "center";
@@ -195,6 +204,12 @@ function onPlay() {
 function onPause() {
     playerProgress.isPlaying = false;
     Logger("Pause");
+}
+
+function onStop() {
+    playerProgress.isPlaying = false;
+    overlayEnd.className = "";
+    Logger("Stop");
 }
 
 // 再生位置の情報が更新されたら呼ばれる
@@ -247,6 +262,10 @@ function onTimeUpdate(position) {
             // ConvertTextToMesh(currentPhrase);
             // CreateTextMesh(currentPhrase);
         }
+
+        // 再生が終了したら 停止リクエストを行う
+        if (playerProgress.position == playerProgress.duration)
+            player.requestStop();
 
         currentPhrase = currentPhrase.next;
     }
