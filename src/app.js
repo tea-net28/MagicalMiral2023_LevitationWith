@@ -22,7 +22,7 @@ import { Vector3 } from "three";
 // ================================================================================================
 // for Debug
 // ================================================================================================
-const isDebug = true;
+const isDebug = false;
 function Logger(text) {
     const style = "color:#93eb4c; background-color: #333333; padding: 0px 10px; display: block;";
     if (isDebug)
@@ -441,6 +441,11 @@ function render() {
                         if (obj.phrase.endTime - (playerProgress.position || 0) < 1000)
                             obj.material.opacity -= 1.0 / fadeOutDuration * (1000 / 60);
                     }
+                    else
+                    {
+                        obj.mesh.visible = false;
+                        obj.material.opacity = 1.0;
+                    }
                 }
                 else if (animationChangePoint[6] < obj.phrase.startTime && obj.phrase.startTime <= animationChangePoint[7]) {
                     if (animationChangePoint[6] < playerProgress.position && obj.phrase.startTime < playerProgress.position)
@@ -455,15 +460,32 @@ function render() {
                         // Animation
                         const t = (playerProgress.position - obj.phrase.startTime) / 500;
                         const a = 2;
-                        const v0 = -10;
-                        const x = 1 / 2 * a * Math.pow(t, 2) + v0 * t;
+                        const v0 = -5;
+                        const v = a * t + v0;
+                        let x = 0;
+                        if (v < 0)
+                            x = 1 / 2 * a * Math.pow(t, 2) + v0 * t;
+                        else
+                        {
+                            let t2 = -v0 / a;
+                            x = 1 / 2 * a * Math.pow(t2, 2) + v0 * t2;
+                        }
+                        // x, y に分割
+                        const rad = index % 7 * index;
+                        const vectorX = x * Math.cos(rad);
+                        const vectorY = x * Math.sin(rad);
                         // obj.mesh.translateX(Math.max((-3 * ((500 - (playerProgress.position - obj.phrase.startTime)) / 500)), -3));
-                        if (x < 0)
-                            obj.mesh.translateX(x);
+                        obj.mesh.translateX(vectorX);
+                        obj.mesh.translateY(vectorY);
 
                         // Fade Out Animation
                         if (obj.phrase.endTime + 3000 - (playerProgress.position || 0) < -5000)
                             obj.material.opacity -= 1.0 / fadeOutDuration * (1000 / 60);
+                    }
+                    else
+                    {
+                        obj.mesh.visible = false;
+                        obj.material.opacity = 1.0;
                     }
                 }
                 else if (animationChangePoint[7] < obj.phrase.startTime) {
@@ -481,6 +503,11 @@ function render() {
                         if (obj.phrase.endTime - (playerProgress.position || 0) < -1000)
                             obj.material.opacity -= 1.0 / fadeOutDuration * 3 * (1000 / 60);
                     }
+                    else
+                    {
+                        obj.mesh.visible = false;
+                        obj.material.opacity = 1.0;
+                    }
                 }
                 else {
                     obj.mesh.visible = false;
@@ -489,6 +516,7 @@ function render() {
             }
             else {
                 obj.mesh.visible = false;
+                obj.material.opacity = 1.0;
                 // _scene.remove(obj.mesh);
                 // _lyricObjects.splice(index, 1);
                 // Logger(`removeObject`)
@@ -779,7 +807,7 @@ function UpdateSun(progress) {
         let coefficient = 1;
         if (animationChangePoint[5] < playerProgress.position && playerProgress.position < animationChangePoint[6])
             coefficient = 5;
-        const theta = THREE.MathUtils.degToRad(150);
+        const theta = THREE.MathUtils.degToRad(145);
 
         _sun.setFromSphericalCoords(1, phi, theta);
 
@@ -851,8 +879,6 @@ function CreateHelper() {
 //#endregion
 // ================================================================================================
 // #region Resize Window
-
-
 function CalcWindowSize()
 {
     // 回転した直後だと 回転前の情報を取得するため 100ms 待つ
@@ -906,7 +932,7 @@ function CalcWindowSize()
     }, 200);
 }
 
-
+// イベントリスナーに登録
 window.addEventListener('load', () => {
     CalcWindowSize();
   });
