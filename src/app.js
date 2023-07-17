@@ -409,7 +409,7 @@ function render() {
                     obj.mesh.position.x = 15 * Math.sin(Math.PI * (10 * (-index + adjustCount)) / 180);
                     obj.mesh.position.y = 10 * Math.cos(Math.PI * (10 * (-index + adjustCount)) / 180) + 15;
                     // obj.mesh.position.x = ((index % 3) - 1) * 25;
-                    obj.mesh.position.z = (obj.phrase.startTime - (playerProgress.position || 0)) / 20 + 150;
+                    obj.mesh.position.z = (obj.phrase.startTime - (playerProgress.position || 0)) / 20 + 130;
                 }
                 else if (animationChangePoint[3] < obj.phrase.startTime && obj.phrase.startTime <= animationChangePoint[4]) {
                     obj.mesh.visible = true;
@@ -753,7 +753,7 @@ function CreateSky() {
     _sun = new THREE.Vector3();
 
     const sun_uniforms = _sky.material.uniforms;
-    sun_uniforms['turbidity'].value = 5;
+    sun_uniforms['turbidity'].value = 11.4;
     sun_uniforms['rayleigh'].value = 2;
     sun_uniforms['mieCoefficient'].value = 0.005;
     sun_uniforms['mieDirectionalG'].value = 0.8;
@@ -777,21 +777,48 @@ function CreateSky() {
 function UpdateSun(progress) {
     if (_sun != null) {
         const sun_uniforms = _sky.material.uniforms;
-        sun_uniforms['turbidity'].value = 5;
+        sun_uniforms['turbidity'].value = 11.4;
         sun_uniforms['rayleigh'].value = 2;
         sun_uniforms['mieCoefficient'].value = 0.005;
         sun_uniforms['mieDirectionalG'].value = 0.8;
 
-        const phi = THREE.MathUtils.degToRad(90 - (180 * progress));
-        // animationChangePoint[5];
-        // 現在の再生時間に応じて 係数を設定
-        let coefficient = 1;
-        if (animationChangePoint[5] < playerProgress.position && playerProgress.position < animationChangePoint[6])
-            coefficient = 5;
+        // const phi = THREE.MathUtils.degToRad(90 - (180 * progress));
+        // 再生時間に応じた太陽の位置を設定
+        let phi = 90;
+        if (playerProgress.position < animationChangePoint[5])
+            phi = THREE.MathUtils.degToRad(100 - (200 * (playerProgress.position / animationChangePoint[5])));
+        else if (animationChangePoint[5] <= playerProgress.position && playerProgress.position < animationChangePoint[6])
+            phi = THREE.MathUtils.degToRad(-100 - (180 * ((playerProgress.position - animationChangePoint[5]) / (animationChangePoint[6] - animationChangePoint[5]))));
+        else
+            phi = THREE.MathUtils.degToRad(-280 - (180 * ((playerProgress.position - animationChangePoint[6]) / (playerProgress.duration - animationChangePoint[6]))));
         const theta = THREE.MathUtils.degToRad(145);
 
         _sun.setFromSphericalCoords(1, phi, theta);
 
+        // その他 空の設定
+        if (playerProgress.position < animationChangePoint[5])
+        {
+            sun_uniforms['turbidity'].value = 11.4;
+            sun_uniforms['rayleigh'].value = 2;
+            sun_uniforms['mieCoefficient'].value = 0.005;
+            sun_uniforms['mieDirectionalG'].value = 0.8;
+        }
+        else if (animationChangePoint[5] <= playerProgress.position && playerProgress.position < animationChangePoint[6])
+        {
+            const turbidity = 11.4 - ((playerProgress.position - animationChangePoint[5]) / 1000) * 11.4;
+            const rayleigh = 2.0 - ((playerProgress.position - animationChangePoint[5]) / 1000) * 2.0;
+            sun_uniforms['turbidity'].value = Math.max(0.1, turbidity);
+            sun_uniforms['rayleigh'].value = Math.max(0.1, rayleigh);
+        }
+        else
+        {
+            const turbidity = 0.1 + ((playerProgress.position - animationChangePoint[6]) / 1000) * 11.4;
+            const rayleigh = 0.1 + ((playerProgress.position - animationChangePoint[6]) / 1000) * 2.0;
+            // const exposure = 0.1 + ((playerProgress.position - animationChangePoint[6]) / 1000) * 0.4;
+            // _renderer.toneMappingExposure = Math.min(0.5, exposure);
+            sun_uniforms['turbidity'].value = Math.min(11.4, turbidity);
+            sun_uniforms['rayleigh'].value = Math.min(2.0, rayleigh);
+        }
         sun_uniforms['sunPosition'].value.copy(_sun);
     }
 }
