@@ -29,10 +29,18 @@ body {
     color: white;
 }
 
+#frame
+{
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
 /* オーバーレイ / Overlay */
 #overlay {
     user-select: none;
-    position: fixed;
+    position: absolute;
     top: 0;
     left: 0;
     right: 0;
@@ -47,7 +55,7 @@ body {
     display: none;
   }
   #overlay > p {
-    width: 100vw;
+    width: 100%;
     font-size: 64px;
     text-align: center;
     font-family: 'M PLUS Rounded 1c', sans-serif;
@@ -96,13 +104,13 @@ body {
 }
 
 #header {
-    position: fixed;
+    position: absolute;
     left: 0;
     top: 0;
 }
 
 #footer {
-    position: fixed;
+    position: absolute;
     left: 0;
     bottom: 0;
 }
@@ -142,7 +150,7 @@ body {
 }
 
 #seekbar {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   right: 0;

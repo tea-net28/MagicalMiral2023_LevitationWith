@@ -22,7 +22,7 @@ import { Vector3 } from "three";
 // ================================================================================================
 // for Debug
 // ================================================================================================
-const isDebug = false;
+const isDebug = true;
 function Logger(text) {
     const style = "color:#93eb4c; background-color: #333333; padding: 0px 10px; display: block;";
     if (isDebug)
@@ -256,8 +256,6 @@ function onTimeUpdate(position) {
             // CreateTextMesh(currentPhrase);
         }
 
-
-
         currentPhrase = currentPhrase.next;
     }
 }
@@ -270,6 +268,12 @@ seekbar.addEventListener("click", (e) => {
         player.requestMediaSeek(
             (player.video.duration * e.offsetX) / seekbar.clientWidth
         );
+        player.requestPlay();
+
+        // すべてのメッシュの透明度をリセットする
+        _lyricObjects.forEach((obj, index) => {
+            obj.material.opacity = 1.0;
+        });
     }
     return false;
 });
@@ -295,7 +299,7 @@ let _clock = new THREE.Clock();
 
 let _lyricObjects = [];
 
-let animationChangePoint = [0, 50000, 95000, 131000, 153000, 174000, 195000, 215000];
+let animationChangePoint = [0, 50000, 95000, 131000, 153000, 174000, 195000, 217000];
 const fadeOutDuration = 1000; // フェードアウトの時間（ミリ秒）
 
 // -----------------------------------------------------------------------
@@ -326,20 +330,22 @@ function init() {
     _camera = new THREE.PerspectiveCamera(55, windowWidth / windowHeight, 1, 1000);
     if (isDebug)
     {
-        _camera.position.set(-15, 15, 15);
+        _camera.position.set(-15, 16, 15);
         _scene.add(_camera);
         document.addEventListener('touchmove', function (e) { e.preventDefault(); }, { passive: false });
         orbitControls = new OrbitControls(_camera, _canvas);
     }
     else
     {
-        const vec3 = new Vector3(0, 14, 0.01);
-        _camera.position.set(0, 14, 0);
+        const vec3 = new Vector3(0, 14.5, 0.01);
+        _camera.position.set(0, 14.5, 0);
         _camera.rotateY(Math.PI);
         _scene.add(_camera);
 
         orbitControls = new OrbitControls(_camera, _canvas);
         orbitControls.target = vec3;
+        orbitControls.enableZoom = false;
+        orbitControls.enablePan = false;
     }
     // 常にカメラの向きを原点に
     // _camera.lookAt(_scene.position);
@@ -412,12 +418,13 @@ function render() {
                 }
                 else if (animationChangePoint[3] < obj.phrase.startTime && obj.phrase.startTime <= animationChangePoint[4]) {
                     obj.mesh.visible = true;
+                    const adjustCount = -23;
                     // Logger("Char Instance");
-                    obj.mesh.position.x = 25 * Math.sin(Math.PI * (5 * (-index + 1)) / 180);
+                    obj.mesh.position.x = 25 * Math.sin(Math.PI * (7.5 * (-index + adjustCount)) / 180);
                     obj.mesh.position.y = -1 * (obj.phrase.startTime - (playerProgress.position || 0)) / 100 + 10;
-                    obj.mesh.position.z = 25 * Math.cos(Math.PI * (5 * (-index + 1)) / 180);
+                    obj.mesh.position.z = 25 * Math.cos(Math.PI * (7.5 * (-index + adjustCount)) / 180);
 
-                    obj.mesh.rotation.y = Math.PI + (Math.PI * (5 * (-index + 1)) / 180);
+                    obj.mesh.rotation.y = Math.PI + (Math.PI * (7.5 * (-index + adjustCount)) / 180);
                 }
                 else if (animationChangePoint[4] < obj.phrase.startTime && obj.phrase.startTime <= animationChangePoint[5]) {
                     obj.mesh.visible = true;
@@ -428,7 +435,7 @@ function render() {
                     if (animationChangePoint[5] < playerProgress.position && obj.phrase.startTime < playerProgress.position) {
                         obj.mesh.visible = true;
                         obj.mesh.position.y = 15;
-                        obj.mesh.position.z = 25 + (index % 5);
+                        obj.mesh.position.z = 30 + (index % 5);
 
                         // Fade Out Animation
                         if (obj.phrase.endTime - (playerProgress.position || 0) < 1000)
@@ -446,11 +453,17 @@ function render() {
                         obj.mesh.rotation.y = Math.PI + (Math.PI * (14 * (-index + adjustCount)) / 180);
 
                         // Animation
-                        obj.mesh.translateX(Math.max((-3 * ((500 - (playerProgress.position - obj.phrase.startTime)) / 500)), -3));
+                        const t = (playerProgress.position - obj.phrase.startTime) / 500;
+                        const a = 2;
+                        const v0 = -10;
+                        const x = 1 / 2 * a * Math.pow(t, 2) + v0 * t;
+                        // obj.mesh.translateX(Math.max((-3 * ((500 - (playerProgress.position - obj.phrase.startTime)) / 500)), -3));
+                        if (x < 0)
+                            obj.mesh.translateX(x);
 
                         // Fade Out Animation
-                        if (obj.phrase.endTime - (playerProgress.position || 0) < -5000)
-                            obj.material.opacity -= 1.0 / fadeOutDuration * 3 * (1000 / 60);
+                        if (obj.phrase.endTime + 3000 - (playerProgress.position || 0) < -5000)
+                            obj.material.opacity -= 1.0 / fadeOutDuration * (1000 / 60);
                     }
                 }
                 else if (animationChangePoint[7] < obj.phrase.startTime) {
@@ -471,6 +484,7 @@ function render() {
                 }
                 else {
                     obj.mesh.visible = false;
+                    obj.material.opacity = 1.0;
                 }
             }
             else {
@@ -750,6 +764,7 @@ function CreateSky() {
 }
 
 // 太陽の位置を更新するメソッド
+// let phi = 90;
 function UpdateSun(progress) {
     if (_sun != null) {
         const sun_uniforms = _sky.material.uniforms;
@@ -759,7 +774,12 @@ function UpdateSun(progress) {
         sun_uniforms['mieDirectionalG'].value = 0.8;
 
         const phi = THREE.MathUtils.degToRad(90 - (180 * progress));
-        const theta = THREE.MathUtils.degToRad(90);
+        // animationChangePoint[5];
+        // 現在の再生時間に応じて 係数を設定
+        let coefficient = 1;
+        if (animationChangePoint[5] < playerProgress.position && playerProgress.position < animationChangePoint[6])
+            coefficient = 5;
+        const theta = THREE.MathUtils.degToRad(150);
 
         _sun.setFromSphericalCoords(1, phi, theta);
 
@@ -778,7 +798,7 @@ function LoadGLTF(modelPath) {
         // called when the resource is loaded
         function (gltf) {
             let obj = gltf.scene;
-            obj.position.set(0, 10, -8);
+            obj.position.set(0, 10, -5);
 
 
             const animations = gltf.animations; // Array<THREE.AnimationClip>
@@ -829,4 +849,70 @@ function CreateHelper() {
     _scene.add(grid);
 }
 //#endregion
+// ================================================================================================
+// #region Resize Window
+
+
+function CalcWindowSize()
+{
+    // 回転した直後だと 回転前の情報を取得するため 100ms 待つ
+    setTimeout(() => {
+        // アプリケーションのアスペクト比を設定
+        const aspectRatio = 16.0 / 9.0;
+        // ウインドウのサイズを取得する
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+
+        Logger(`width: ${windowWidth}, height: ${windowHeight}`);
+
+        // タブレットの回転状態に応じて
+        // Width と Height を入れ替える
+        // ランドスケープのとき
+        let width;
+        let height;
+        if (windowWidth > windowHeight)
+        {
+            Logger("ランドスケープ表示です");
+            width = windowHeight * aspectRatio;
+            height = windowHeight;
+            if (width > windowWidth)
+            {
+                width = windowWidth;
+                height = windowWidth / aspectRatio;
+            }
+        }
+        // ポートレートのとき
+        else
+        {
+            Logger("ポートレート表示です");
+            width = windowWidth;
+            height = windowWidth / aspectRatio;
+        }
+
+        // 設定したウインドウサイズを入れ込む
+        const frame = document.querySelector("#frame");
+        frame.style.width = `${width}px`;
+        frame.style.height = `${height}px`;
+
+    // Update cameta info
+    _camera.aspect = aspectRatio;
+    _camera.updateProjectionMatrix();
+
+    // レンダラーのサイズを変更
+    _renderer.setSize(width, height);
+    _renderer.setPixelRatio(1);
+    _renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    _renderer.toneMappingExposure = 0.5;
+    }, 200);
+}
+
+
+window.addEventListener('load', () => {
+    CalcWindowSize();
+  });
+
+  window.addEventListener('resize', () => {
+    CalcWindowSize();
+  });
+// #endregion
 // ================================================================================================
