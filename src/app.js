@@ -139,8 +139,6 @@ function onAppReady(app) {
     console.log("ON App Ready");
     if (!app.songUrl) {
         // URL で指定した楽曲を元にした動画データを作成
-        // ブレス・ユア・ブレス
-        // player.createFromSongUrl("http://www.youtube.com/watch?v=a-Nf3QUFkOU");
         // ネオンライトの海を往く
         player.createFromSongUrl("https://piapro.jp/t/fyxI/20230203003935");
         Logger("楽曲を読み込み");
@@ -151,6 +149,7 @@ function onAppReady(app) {
     }
 
     // 各ボタンにイベントハンドラを追加
+    // 再生ボタン
     playBtns.forEach((playBtn) =>
         playBtn.addEventListener("click", () => {
             player.video && player.requestPlay();
@@ -162,7 +161,7 @@ function onAppReady(app) {
         overlay.className = "disabled";
 
     });
-    // 歌詞頭出しボタン / Seek to the first character in lyrics text
+    // 歌詞頭出しボタン
     jumpBtn.addEventListener(
         "click",
         () => {
@@ -175,13 +174,13 @@ function onAppReady(app) {
 
     );
 
-    // 一時停止ボタン / Pause music playback
+    // 一時停止ボタン
     pauseBtn.addEventListener(
         "click",
         () => player.video && player.requestPause()
     );
 
-    // 巻き戻しボタン / Rewind music playback
+    // 巻き戻しボタン
     rewindBtn.addEventListener(
         "click",
         () => {
@@ -517,9 +516,6 @@ function render() {
             else {
                 obj.mesh.visible = false;
                 obj.material.opacity = 1.0;
-                // _scene.remove(obj.mesh);
-                // _lyricObjects.splice(index, 1);
-                // Logger(`removeObject`)
             }
         });
     }
@@ -547,12 +543,7 @@ function render() {
     requestAnimationFrame(render);
 }
 // -----------------------------------------------------------------------
-
-/**
- * 歌詞を THREE.Mesh 形式に変換するメソッド
- * @param {string} メッシュに変換したい文字列
- * @returns {THREE.Mesh} THREE.Mesh 形式のテキスト
- */
+// 歌詞を THREE.Mesh 形式に変換
 function ConvertTextToMesh(phrase) {
     try {
         const canvas = document.createElement('canvas');
@@ -629,7 +620,7 @@ async function CreateTextMesh(phrase) {
                 // });
                 // Logger("Text Loaded")
 
-                // // BoundingBox を作成し X 中心にテキストの中心を移動
+                // // BoundingBox を作成
                 geometry.center();
                 // geometry.computeBoundingBox();
                 // const xMid = -0.5 * (geometry.boundingBox.max.x - geometry.boundingBox.min.x);
@@ -652,12 +643,10 @@ async function CreateTextMesh(phrase) {
                 };
                 _lyricObjects.push(obj);
             }
-            // return textMesh;
         });
 
     } catch (error) {
         LoggerError(error);
-        // return null;
     }
 }
 
@@ -754,13 +743,6 @@ function CreateSky() {
     _sky.scale.setScalar(1000);
     _scene.add(_sky);
 
-    // Sky の設定
-    // const sky_uniforms = _sky.material.uniforms;
-    // sky_uniforms['turbidity'].value = 10;
-    // sky_uniforms['rayleigh'].value = 2;
-    // sky_uniforms['mieCoefficient'].value = 0.005;
-    // sky_uniforms['mieDirectionalG'].value = 0.8;
-
     // 太陽
     const sunSphere = new THREE.Mesh(
         new THREE.SphereGeometry(200, 16, 8),
@@ -828,7 +810,6 @@ function LoadGLTF(modelPath) {
             let obj = gltf.scene;
             obj.position.set(0, 10, -5);
 
-
             const animations = gltf.animations; // Array<THREE.AnimationClip>
             gltf.scene; // THREE.Group
             gltf.scenes; // Array<THREE.Group>
@@ -850,7 +831,6 @@ function LoadGLTF(modelPath) {
             }
 
             _scene.add(obj);
-
             Logger("glTF モデルを読み込みました");
         },
         // called while loading is progressing
@@ -891,11 +871,9 @@ function CalcWindowSize()
 
         Logger(`width: ${windowWidth}, height: ${windowHeight}`);
 
-        // タブレットの回転状態に応じて
-        // Width と Height を入れ替える
-        // ランドスケープのとき
         let width;
         let height;
+        // ランドスケープのとき
         if (windowWidth > windowHeight)
         {
             Logger("ランドスケープ表示です");
