@@ -126,6 +126,9 @@ function onVideoReady(v) {
     // 歌詞の時間を取得
     playerProgress.duration = player.video.duration;
 
+    // ボリュームを設定
+    player.volume = 40;
+
     // 再生
     // MEMO: ここで再生リクエストをすると エラーが発生して再生されなかった。
     // player.requestPlay();
