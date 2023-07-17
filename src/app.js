@@ -291,7 +291,7 @@ let _clock = new THREE.Clock();
 
 let _lyricObjects = [];
 
-let animationChangePoint = [0, 50000, 95000, 131000, 153000, 174000, 195000, 217000];
+let animationChangePoint = [0, 50000, 95000, 132000, 153000, 174000, 195000, 217000];
 const fadeOutDuration = 1000; // フェードアウトの時間（ミリ秒）
 
 // -----------------------------------------------------------------------
@@ -405,13 +405,15 @@ function render() {
                 }
                 else if (animationChangePoint[2] < obj.phrase.startTime && obj.phrase.startTime <= animationChangePoint[3]) {
                     obj.mesh.visible = true;
-                    obj.mesh.position.x = ((index % 3) - 1) * 25;
+                    const adjustCount = 4;
+                    obj.mesh.position.x = 15 * Math.sin(Math.PI * (10 * (-index + adjustCount)) / 180);
+                    obj.mesh.position.y = 10 * Math.cos(Math.PI * (10 * (-index + adjustCount)) / 180) + 15;
+                    // obj.mesh.position.x = ((index % 3) - 1) * 25;
                     obj.mesh.position.z = (obj.phrase.startTime - (playerProgress.position || 0)) / 20 + 150;
                 }
                 else if (animationChangePoint[3] < obj.phrase.startTime && obj.phrase.startTime <= animationChangePoint[4]) {
                     obj.mesh.visible = true;
-                    const adjustCount = -23;
-                    // Logger("Char Instance");
+                    const adjustCount = 3;
                     obj.mesh.position.x = 25 * Math.sin(Math.PI * (7.5 * (-index + adjustCount)) / 180);
                     obj.mesh.position.y = -1 * (obj.phrase.startTime - (playerProgress.position || 0)) / 100 + 10;
                     obj.mesh.position.z = 25 * Math.cos(Math.PI * (7.5 * (-index + adjustCount)) / 180);
@@ -420,7 +422,7 @@ function render() {
                 }
                 else if (animationChangePoint[4] < obj.phrase.startTime && obj.phrase.startTime <= animationChangePoint[5]) {
                     obj.mesh.visible = true;
-                    obj.mesh.position.x = ((index % 3) - 1) * 25;
+                    obj.mesh.position.x = (((index + 1) % 3) - 1) * 15;
                     obj.mesh.position.z = (obj.phrase.startTime - (playerProgress.position || 0)) / 20 + 150;
                 }
                 else if (animationChangePoint[5] < obj.phrase.startTime && obj.phrase.startTime <= animationChangePoint[6]) {
@@ -442,10 +444,10 @@ function render() {
                 else if (animationChangePoint[6] < obj.phrase.startTime && obj.phrase.startTime <= animationChangePoint[7]) {
                     if (animationChangePoint[6] < playerProgress.position && obj.phrase.startTime < playerProgress.position)
                     {
-                        const adjustCount = 2;
+                        const adjustCount = -1;
                         obj.mesh.visible = true;
                         obj.mesh.position.x = 25 * Math.sin(Math.PI * (14 * (-index + adjustCount)) / 180);
-                        obj.mesh.position.y = (index / 6);
+                        obj.mesh.position.y = 15;
                         obj.mesh.position.z = 25 * Math.cos(Math.PI * (14 * (-index + adjustCount)) / 180);
                         obj.mesh.rotation.y = Math.PI + (Math.PI * (14 * (-index + adjustCount)) / 180);
 
@@ -589,7 +591,11 @@ async function CreateTextMesh(phrase) {
 
             // ジオメトリを作成
             // 指定の範囲の歌詞については 文字単位で作成する
-            if (animationChangePoint[3] < phrase.startTime && phrase.startTime < animationChangePoint[4]) {
+            if (animationChangePoint[2] < phrase.startTime && phrase.startTime < animationChangePoint[3])
+            {
+                CreateObjectByChar(loadedFont, matLite, phrase);
+            }
+            else if (animationChangePoint[3] < phrase.startTime && phrase.startTime < animationChangePoint[4]) {
                 CreateObjectByChar(loadedFont, matLite, phrase);
             }
             else if (animationChangePoint[6] < phrase.startTime && phrase.startTime < animationChangePoint[7]) {
