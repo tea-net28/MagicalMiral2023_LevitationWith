@@ -88,18 +88,11 @@ const paintedSeekbar = seekbar.querySelector("div");
 let playerProgress = {
     position: null,
     duration: null,
-    beat: null,
-    chorus: null,
-    chord: null,
     phrase: null,
-    word: null,
-    char: null,
-    volume: null,
     isPlaying: false,
     ready: false
 };
 
-let chars = [];
 let phrases = [];
 
 // -----------------------------------------------------------------------
